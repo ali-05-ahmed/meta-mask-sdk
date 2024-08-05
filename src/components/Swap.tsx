@@ -221,7 +221,7 @@ export default function Swap() {
                         <img
                           src={routes?.[0]?.steps?.[0]?.toolDetails?.logoURI}
                           alt={routes?.[0]?.steps?.[0]?.toolDetails?.name}
-                          className="w-5 h-5 mr-1 rounded-full"
+                          className="w-5 h-5 mr-1 rounded-full border bg-gray-400"
                         />
                         {routes?.[0]?.steps?.[0]?.toolDetails?.name}
                       </>
@@ -239,7 +239,11 @@ export default function Swap() {
                       </>
                     )}
                   </p>
-                  <p className="text-green-500">Best</p>
+                  {isLoading ? (
+                    <Skeleton className="w-[80px] h-2 bg-gray-400 rounded-lg" />
+                  ) : (
+                    <p className="text-green-500">Best</p>
+                  )}
                   <ChevronRight />
                 </span>
               </Button>
