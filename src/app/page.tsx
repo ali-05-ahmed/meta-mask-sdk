@@ -1,6 +1,7 @@
 import MetaMaskComp from "@/components/MetaMaskComp";
 import SelectMarket from "@/components/SelectMarket";
 import Swap from "@/components/Swap";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requestRoutes } from "@/lib/lifi";
 
 export default async function Home() {

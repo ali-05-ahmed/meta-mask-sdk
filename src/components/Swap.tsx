@@ -17,6 +17,7 @@ import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { getTokensFromChain, requestRoutes } from "@/lib/lifi";
 import { ChainId } from "@lifi/sdk";
+import { Skeleton } from "./ui/skeleton";
 
 type Token = {
   name: string;
@@ -36,6 +37,7 @@ export default function Swap() {
   const [buyerTokens, setBuyerTokens] = useState<Token[]>([]);
   const [sellerValue, setSellerValue] = useState<string>("");
   const [buyerValue, setBuyerValue] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
@@ -84,6 +86,7 @@ export default function Swap() {
 
   useEffect(() => {
     const fetchRoutes = async () => {
+      setIsLoading(true);
       if (!sellerToken || !buyerToken || !sellerValue) return;
 
       const sellerTokenObj = sellerTokens.find((t) => t.name === sellerToken);
@@ -102,11 +105,11 @@ export default function Swap() {
         ).toString(),
       });
       setRoutes(fetchedRoutes);
-
+      setIsLoading(false);
       if (fetchedRoutes && fetchedRoutes[0] && fetchedRoutes[0].toAmount) {
         const toAmount =
           parseFloat(fetchedRoutes[0].toAmount) / 10 ** buyerTokenObj.decimals;
-        setBuyerValue(toAmount.toFixed(buyerTokenObj.decimals));
+        setBuyerValue(toAmount.toFixed(6));
       }
     };
 
@@ -159,6 +162,7 @@ export default function Swap() {
                 value={sellerValue}
                 setValue={setSellerValue}
                 fromAmtUSD={routes?.[0]?.fromAmountUSD ?? ""}
+                isLoading={isLoading}
               />
               <SwapInput
                 type="buyer"
@@ -169,8 +173,9 @@ export default function Swap() {
                 setSelectedToken={handleBuyerTokenChange}
                 tokens={buyerTokens}
                 value={buyerValue}
-                setValue={setBuyerValue}
+                setValue={(value) => setBuyerValue(value)}
                 toAmtUSD={routes?.[0]?.toAmountUSD ?? ""}
+                isLoading={isLoading}
               />
             </div>
             <div className="ml-2 flex items-center gap-2">
@@ -207,10 +212,32 @@ export default function Swap() {
             <div className="flex items-center gap-2 justify-between ml-2">
               <Label className="text-sm">DEX</Label>
               <Button className="flex items-center font-light text-xs h-8 w-full justify-between rounded-lg text-white bg-zinc-950">
-                <span className="flex items-center gap-1">Uniswap</span>
+                <span className="flex items-center gap-1">
+                  <span className="flex items-center">
+                    {isLoading ? (
+                      <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                    ) : (
+                      <>
+                        <img
+                          src={routes?.[0]?.steps?.[0]?.toolDetails?.logoURI}
+                          alt={routes?.[0]?.steps?.[0]?.toolDetails?.name}
+                          className="w-5 h-5 mr-1 rounded-full"
+                        />
+                        {routes?.[0]?.steps?.[0]?.toolDetails?.name}
+                      </>
+                    )}
+                  </span>
+                </span>
                 <span className="flex items-center gap-0.5">
                   <p>
-                    1{routes?.[0]?.toToken?.symbol ?? ""} = 000,000.00000000
+                    {isLoading ? (
+                      <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                    ) : (
+                      <>
+                        1 {routes?.[0]?.fromToken?.symbol ?? ""} ={" "}
+                        {routes?.[0]?.fromAmountUSD ?? "000,000.00000000"}
+                      </>
+                    )}
                   </p>
                   <p className="text-green-500">Best</p>
                   <ChevronRight />
@@ -222,10 +249,16 @@ export default function Swap() {
                 <div className="flex justify-between">
                   <dt>Network Fee</dt>
                   <dt>
-                    {routes?.[0]?.gasCostUSD
-                      ? `$${parseFloat(routes[0].gasCostUSD).toFixed(4)}`
-                      : ""}
-                    (〜$0.0005)
+                    {isLoading ? (
+                      <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                    ) : (
+                      <>
+                        {routes?.[0]?.gasCostUSD
+                          ? `$${parseFloat(routes[0].gasCostUSD).toFixed(4)}`
+                          : ""}
+                        (〜$0.0005)
+                      </>
+                    )}
                   </dt>
                 </div>
                 <div className="flex justify-between">
