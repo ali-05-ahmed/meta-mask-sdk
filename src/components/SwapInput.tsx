@@ -26,7 +26,7 @@ export default function SwapInput({ type }: { type: InputType }) {
       <Input
         type="number"
         placeholder="000,000,000.00"
-        className="text-white bg-zinc-950 rounded-lg h-28 text-2xl pl-5 focus-visible:border-green-500 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+        className="text-white bg-zinc-950 rounded-lg h-28 text-2xl border-none pl-5 focus-visible:border-green-500 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
       />
       <div className="absolute right-4">
         <Select defaultValue="ETH">

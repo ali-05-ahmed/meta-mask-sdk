@@ -14,14 +14,33 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronRight, Settings } from "lucide-react";
 import SwapInput from "./SwapInput";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { requestRoutes } from "@/lib/lifi";
 
 export default function Swap() {
   const [selectedSlippage, setSelectedSlippage] = useState(null);
+  const [routes, setRoutes] = useState(null);
 
   const handleSlippageChange = (value: any) => {
     setSelectedSlippage(value);
   };
+
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      const fetchedRoutes: any = await requestRoutes({
+        fromChainId: 42161, // Arbitrum
+        toChainId: 10, // Optimism
+        fromTokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+        toTokenAddress: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1", // DAI on Optimism
+        fromAmount: "10000000", // 10 USDC
+      });
+      setRoutes(fetchedRoutes);
+    };
+
+    fetchRoutes();
+    console.log("LOGGING");
+    
+  }, []);
 
   return (
     <Drawer>
@@ -71,7 +90,7 @@ export default function Swap() {
                   </Button>
                 ))}
                 <Input
-                  placeholder={`input${"                       "}%`}
+                  placeholder={`input${""}%`}
                   value={
                     selectedSlippage &&
                     !["0.1", "0.5", "1"].includes(selectedSlippage)

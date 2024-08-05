@@ -14,25 +14,40 @@ createConfig({
   },
 });
 
-export const requestRoutes = async ({
+export const requestRoutes  = async ({
   fromChainId,
   toChainId,
   fromTokenAddress,
   toTokenAddress,
   fromAmount,
-}: RoutesRequest) => {
+}: any) => {
+
+  createConfig({
+    integrator: "lifitest",
+    rpcUrls: {
+      [ChainId.ARB]: [
+        "https://arb-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
+      ],
+      [ChainId.BAS]: [
+        "https://base-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
+      ],
+    },
+  });
+  
   const routesRequest = {
     fromChainId,
     toChainId,
     fromTokenAddress,
     toTokenAddress,
-    fromAmount: ethers.parseUnits(
-      fromAmount.toString(),
-      getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
-    ),
+    // fromAmount: ethers.parseUnits(
+    //   fromAmount.toString(),
+    //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
+    // ),
+    fromAmount
   };
   const result = await getRoutes(routesRequest);
   const routes = result.routes;
+  console.log(routes)
   return routes;
 };
 
