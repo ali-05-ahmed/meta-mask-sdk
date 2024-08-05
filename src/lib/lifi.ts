@@ -14,14 +14,13 @@ createConfig({
   },
 });
 
-export const requestRoutes  = async ({
+export const requestRoutes = async ({
   fromChainId,
   toChainId,
   fromTokenAddress,
   toTokenAddress,
   fromAmount,
 }: any) => {
-
   createConfig({
     integrator: "lifitest",
     rpcUrls: {
@@ -33,7 +32,7 @@ export const requestRoutes  = async ({
       ],
     },
   });
-  
+
   const routesRequest = {
     fromChainId,
     toChainId,
@@ -43,15 +42,15 @@ export const requestRoutes  = async ({
     //   fromAmount.toString(),
     //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
     // ),
-    fromAmount
+    fromAmount,
   };
   const result = await getRoutes(routesRequest);
   const routes = result.routes;
-  console.log(routes)
+  console.log(routes);
   return routes;
 };
 
-const getTokensFromChain = (_ChainId: any) => {
+export const getTokensFromChain = (_ChainId: any) => {
   //For testing purpose
 
   if (_ChainId === ChainId.ARB) {
@@ -86,6 +85,7 @@ const getTokensFromChain = (_ChainId: any) => {
       },
     ];
   }
+  return [];
 };
 
 // ... existing code ...

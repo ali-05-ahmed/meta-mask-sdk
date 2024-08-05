@@ -15,32 +15,122 @@ import { ChevronDown, ChevronRight, Settings } from "lucide-react";
 import SwapInput from "./SwapInput";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
-import { requestRoutes } from "@/lib/lifi";
+import { getTokensFromChain, requestRoutes } from "@/lib/lifi";
+import { ChainId } from "@lifi/sdk";
+
+type Token = {
+  name: string;
+  decimals: number;
+  logo: string;
+  address: string;
+};
 
 export default function Swap() {
-  const [selectedSlippage, setSelectedSlippage] = useState(null);
-  const [routes, setRoutes] = useState(null);
+  const [selectedSlippage, setSelectedSlippage] = useState<string | null>(null);
+  const [routes, setRoutes] = useState<any>(null);
+  const [sellerChain, setSellerChain] = useState<"ARB" | "BAS">("ARB");
+  const [buyerChain, setBuyerChain] = useState<"ARB" | "BAS">("BAS");
+  const [sellerToken, setSellerToken] = useState<string>("");
+  const [buyerToken, setBuyerToken] = useState<string>("");
+  const [sellerTokens, setSellerTokens] = useState<Token[]>([]);
+  const [buyerTokens, setBuyerTokens] = useState<Token[]>([]);
+  const [sellerValue, setSellerValue] = useState<string>("");
+  const [buyerValue, setBuyerValue] = useState<string>("");
 
-  const handleSlippageChange = (value: any) => {
+  const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
   };
 
+  const handleSellerChainChange = (newChain: "ARB" | "BAS") => {
+    setSellerChain(newChain);
+    setSellerToken("");
+  };
+
+  const handleBuyerChainChange = (newChain: "ARB" | "BAS") => {
+    setBuyerChain(newChain);
+    setBuyerToken("");
+  };
+
+  const handleSellerTokenChange = (token: string) => {
+    if (sellerChain === buyerChain && token === buyerToken) {
+      const differentToken = sellerTokens.find((t) => t.name !== buyerToken);
+      setSellerToken(differentToken?.name || "");
+    } else {
+      setSellerToken(token);
+    }
+  };
+
+  const handleBuyerTokenChange = (token: string) => {
+    if (buyerChain === sellerChain && token === sellerToken) {
+      const differentToken = buyerTokens.find((t) => t.name !== sellerToken);
+      setBuyerToken(differentToken?.name || "");
+    } else {
+      setBuyerToken(token);
+    }
+  };
+
   useEffect(() => {
-    const fetchRoutes = async () => {
-      const fetchedRoutes: any = await requestRoutes({
-        fromChainId: 42161, // Arbitrum
-        toChainId: 10, // Optimism
-        fromTokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
-        toTokenAddress: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1", // DAI on Optimism
-        fromAmount: "10000000", // 10 USDC
-      });
-      setRoutes(fetchedRoutes);
+    const fetchTokens = async () => {
+      const sellerChainId = sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS;
+      const buyerChainId = buyerChain === "ARB" ? ChainId.ARB : ChainId.BAS;
+      const fetchedSellerTokens = await getTokensFromChain(sellerChainId);
+      const fetchedBuyerTokens = await getTokensFromChain(buyerChainId);
+      setSellerTokens(fetchedSellerTokens || []);
+      setBuyerTokens(fetchedBuyerTokens || []);
     };
 
-    fetchRoutes();
-    console.log("LOGGING");
-    
-  }, []);
+    fetchTokens();
+  }, [sellerChain, buyerChain]);
+
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      if (!sellerToken || !buyerToken || !sellerValue) return;
+
+      const sellerTokenObj = sellerTokens.find((t) => t.name === sellerToken);
+      const buyerTokenObj = buyerTokens.find((t) => t.name === buyerToken);
+
+      if (!sellerTokenObj || !buyerTokenObj) return;
+
+      const fetchedRoutes: any = await requestRoutes({
+        fromChainId: sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
+        toChainId: buyerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
+        fromTokenAddress: sellerTokenObj.address,
+        toTokenAddress: buyerTokenObj.address,
+        fromAmount: (
+          parseFloat(sellerValue) *
+          10 ** sellerTokenObj.decimals
+        ).toString(),
+      });
+      setRoutes(fetchedRoutes);
+
+      if (fetchedRoutes && fetchedRoutes[0] && fetchedRoutes[0].toAmount) {
+        const toAmount =
+          parseFloat(fetchedRoutes[0].toAmount) / 10 ** buyerTokenObj.decimals;
+        setBuyerValue(toAmount.toFixed(buyerTokenObj.decimals));
+      }
+    };
+
+    if (sellerToken && buyerToken && sellerValue) {
+      fetchRoutes();
+    }
+  }, [
+    sellerChain,
+    buyerChain,
+    sellerToken,
+    buyerToken,
+    sellerValue,
+    sellerTokens,
+    buyerTokens,
+  ]);
+
+  useEffect(() => {
+    if (sellerTokens.length > 0 && !sellerToken) {
+      setSellerToken(sellerTokens[0].name);
+    }
+    if (buyerTokens.length > 0 && !buyerToken) {
+      setBuyerToken(buyerTokens[0].name);
+    }
+  }, [sellerTokens, buyerTokens, sellerToken, buyerToken]);
 
   return (
     <Drawer>
@@ -57,19 +147,31 @@ export default function Swap() {
 
         <DrawerFooter className="text-xs p-4">
           <div className="space-y-2">
-            <div className="flex flex-col space-y-1 w-full">
-              <Label className="font-thin">Chain</Label>
-              <Button className="flex font-light justify-between rounded-lg text-white bg-zinc-950">
-                <span className="flex items-center gap-1">
-                  <div className="h-5 w-5 bg-white rounded-full" />
-                  Etherem
-                </span>
-                <ChevronDown />
-              </Button>
-            </div>
-            <div>
-              <SwapInput type="seller" />
-              <SwapInput type="buyer" />
+            <div className="space-y-1">
+              <SwapInput
+                type="seller"
+                selectedChain={sellerChain}
+                setSelectedChain={handleSellerChainChange}
+                selectedToken={sellerToken}
+                setSelectedToken={handleSellerTokenChange}
+                tokens={sellerTokens}
+                defaultValue={"ARB"}
+                value={sellerValue}
+                setValue={setSellerValue}
+                fromAmtUSD={routes?.[0]?.fromAmountUSD ?? ""}
+              />
+              <SwapInput
+                type="buyer"
+                defaultValue={"BAS"}
+                selectedChain={buyerChain}
+                setSelectedChain={handleBuyerChainChange}
+                selectedToken={buyerToken}
+                setSelectedToken={handleBuyerTokenChange}
+                tokens={buyerTokens}
+                value={buyerValue}
+                setValue={setBuyerValue}
+                toAmtUSD={routes?.[0]?.toAmountUSD ?? ""}
+              />
             </div>
             <div className="ml-2 flex items-center gap-2">
               <Label className="text-sm">Slippage</Label>
@@ -90,7 +192,7 @@ export default function Swap() {
                   </Button>
                 ))}
                 <Input
-                  placeholder={`input${""}%`}
+                  placeholder={`input%`}
                   value={
                     selectedSlippage &&
                     !["0.1", "0.5", "1"].includes(selectedSlippage)
@@ -98,7 +200,7 @@ export default function Swap() {
                       : ""
                   }
                   onChange={(e) => handleSlippageChange(e.target.value)}
-                  className="text-xs w-1/2 h-8 rounded-lg bg-zinc-950 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+                  className="text-xs w-1/2 h-8 rounded-lg bg-zinc-950 border-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
                 />
               </div>
             </div>
@@ -107,7 +209,9 @@ export default function Swap() {
               <Button className="flex items-center font-light text-xs h-8 w-full justify-between rounded-lg text-white bg-zinc-950">
                 <span className="flex items-center gap-1">Uniswap</span>
                 <span className="flex items-center gap-0.5">
-                  <p>1ETH = 000,000.00000000</p>
+                  <p>
+                    1{routes?.[0]?.toToken?.symbol ?? ""} = 000,000.00000000
+                  </p>
                   <p className="text-green-500">Best</p>
                   <ChevronRight />
                 </span>
@@ -117,14 +221,19 @@ export default function Swap() {
               <dl className="space-y-0.5 text-xs">
                 <div className="flex justify-between">
                   <dt>Network Fee</dt>
-                  <dt>0.0000000(〜$0.0005)</dt>
+                  <dt>
+                    {routes?.[0]?.gasCostUSD
+                      ? `$${parseFloat(routes[0].gasCostUSD).toFixed(4)}`
+                      : ""}
+                    (〜$0.0005)
+                  </dt>
                 </div>
                 <div className="flex justify-between">
                   <dt>Protocol Fee</dt>
                   <dt>0.0000000(〜$0.0000)</dt>
                 </div>
                 <div className="flex justify-between">
-                  <dt>Minimum Recevied</dt>
+                  <dt>Minimum Received</dt>
                   <dt>000,000,000.00000000 USD</dt>
                 </div>
               </dl>

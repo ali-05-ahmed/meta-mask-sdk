@@ -12,41 +12,130 @@ import {
 
 type InputType = "seller" | "buyer";
 
-export default function SwapInput({ type }: { type: InputType }) {
+type Token = {
+  name: string;
+  decimals: number;
+  logo: string;
+  address: string;
+};
+
+type SwapInputProps = {
+  type: InputType;
+  selectedChain: "ARB" | "BAS";
+  setSelectedChain: (chain: "ARB" | "BAS") => void;
+  selectedToken: string;
+  setSelectedToken: (token: string) => void;
+  tokens: Token[];
+  defaultValue: "ARB" | "BAS";
+  value: string | number;
+  setValue: (value: any) => void;
+  fromAmtUSD?: string;
+  toAmtUSD?: string;
+  balance?: string;
+};
+
+export default function SwapInput({
+  type,
+  selectedChain,
+  setSelectedChain,
+  selectedToken,
+  setSelectedToken,
+  tokens,
+  defaultValue,
+  value,
+  setValue,
+  fromAmtUSD,
+  toAmtUSD,
+  balance,
+}: SwapInputProps) {
   const isSeller = type === "seller";
+
+  const getChainIcon = (chain: "ARB" | "BAS") => {
+    return chain === "ARB" ? "/arb.png" : "/base.png";
+  };
+
+  const handleMaxClick = () => {
+    if (isSeller) {
+      setValue("100000000000");
+    }
+  };
 
   return (
     <div className="flex items-center gap-4 relative">
       <Label className="text-left absolute left-5 top-[12px] z-10 pointer-events-none text-xs font-thin">
-        You {isSeller ? "Sell" : "Buy"} Balance 100,000,000.0000{" "}
+        You {isSeller ? "Sell" : "Buy"} Balance {100000000000}
         {isSeller ? (
-          <span className="text-green-500 font-normal">Max</span>
+          <span
+            className="text-green-500 font-normal cursor-pointer"
+            onClick={handleMaxClick}
+          >
+            Max
+          </span>
         ) : null}
       </Label>
+
       <Input
         type="number"
         placeholder="000,000,000.00"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
         className="text-white bg-zinc-950 rounded-lg h-28 text-2xl border-none pl-5 focus-visible:border-green-500 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
       />
-      <div className="absolute right-4">
-        <Select defaultValue="ETH">
-          <SelectTrigger className="w-[100px] bg-[#1a222c]">
+      <div className="absolute right-4 space-y-2">
+        <Select
+          defaultValue={defaultValue}
+          onValueChange={(value: "ARB" | "BAS") => setSelectedChain(value)}
+        >
+          <SelectTrigger className="w-[100px] bg-[#1a222c] border-none">
             <div className="flex gap-1 items-center">
-              <div className="h-4 w-4 bg-white rounded-full" />
+              <img
+                src={getChainIcon(selectedChain)}
+                alt={selectedChain}
+                className="h-4 w-4 rounded-full"
+              />
               <SelectValue />
             </div>
           </SelectTrigger>
-          <SelectContent className="bg-[#1a222c]">
+          <SelectContent className="bg-[#1a222c] border-none text-white">
             <SelectGroup>
-              <SelectItem value="ETH">ETH</SelectItem>
-              <SelectItem value="BTC">BTC</SelectItem>
-              <SelectItem value="USDC">USDC</SelectItem>
+              <SelectItem value="ARB">ARB</SelectItem>
+              <SelectItem value="BAS">BAS</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select
+          value={selectedToken}
+          onValueChange={(value: string) => setSelectedToken(value)}
+        >
+          <SelectTrigger className="w-[100px] bg-[#1a222c] border-none">
+            <div className="flex gap-1 items-center">
+              {tokens.find((t) => t.name === selectedToken) && (
+                <img
+                  src={tokens.find((t) => t.name === selectedToken)!.logo}
+                  alt={selectedToken}
+                  className="h-4 w-4 rounded-full"
+                />
+              )}
+              <SelectValue />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a222c] border-none text-white">
+            <SelectGroup>
+              {tokens.map((token) => (
+                <SelectItem
+                  key={token.address}
+                  value={token.name}
+                  className="flex items-center gap-1"
+                >
+                  <p>{token.name}</p>
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>
       </div>
       <p className="absolute left-5 top-[5.5rem] z-10 text-xs font-thin">
-        〜$000,000.00
+        〜${isSeller ? fromAmtUSD : toAmtUSD}
       </p>
     </div>
   );
