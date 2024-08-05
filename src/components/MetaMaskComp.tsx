@@ -1,9 +1,23 @@
+"use client";
+
 import { useSDK } from "@metamask/sdk-react";
 import React, { useState } from "react";
-import "./App.css";
-import { send_eth_signTypedData_v4, send_personal_sign } from "./SignHelpers";
+import {
+  send_eth_signTypedData_v4,
+  send_personal_sign,
+} from "@/helpers/SignHelpers";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export const App = () => {
+export default function MetaMaskComp() {
   const [response, setResponse] = useState<unknown>("");
   const { sdk, connected, connecting, provider, chainId, account, balance } =
     useSDK();
@@ -17,16 +31,6 @@ export const App = () => {
   const changeLanguage = async (currentLanguage: string) => {
     localStorage.setItem("MetaMaskSDKLng", currentLanguage);
     window.location.reload();
-  };
-
-  const handleLanguageChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setCurrentLanguage(event.target.value);
-
-    changeLanguage(event.target.value).then(() => {
-      console.debug(`language changed to ${event.target.value}`);
-    });
   };
 
   const connectAndSign = async () => {
@@ -154,7 +158,7 @@ export const App = () => {
 
   return (
     <div className="App">
-      <h1>gugug Example</h1>
+      <h1>Next js MetaMask SDK</h1>
       <div className={"Info-Status"}>
         <p>{`Connected chain: ${chainId}`}</p>
         <p>{`Connected account: ${account}`}</p>
@@ -169,124 +173,132 @@ export const App = () => {
         )}
       </div>
       <div className="language-dropdown">
-        <label htmlFor="language-select">Language: </label>
-        <select
-          id="language-select"
+        <Label htmlFor="language-select">Language: </Label>
+        <Select
           value={currentLanguage}
-          onChange={handleLanguageChange}
+          defaultValue="en"
+          onValueChange={setCurrentLanguage}
         >
-          {languages.map((lang) => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            defaultValue="en"
+            className="w-[100px] bg-[#1a222c] text-white"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a222c] text-white">
+            <SelectGroup>
+              {languages.map((lang) => (
+                <SelectItem key={lang} value={lang}>
+                  {lang}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
       {connected ? (
         <div>
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={connect}
           >
             Request Accounts
-          </button>
+          </Button>
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={eth_signTypedData_v4}
           >
             eth_signTypedData_v4
-          </button>
+          </Button>
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={eth_personal_sign}
           >
             personal_sign
-          </button>
+          </Button>
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={sendTransaction}
           >
             Send transaction
-          </button>
+          </Button>
 
           {provider?.getChainId() === "0x1" ? (
-            <button
+            <Button
               className={"Button-Normal"}
               style={{ padding: 10, margin: 10 }}
               onClick={() => changeNetwork("0x5")}
             >
               Switch to Goerli
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               className={"Button-Normal"}
               style={{ padding: 10, margin: 10 }}
               onClick={() => changeNetwork("0x1")}
             >
               Switch to Mainnet
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={() => changeNetwork("0x89")}
           >
             Switch to Polygon
-          </button>
+          </Button>
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={addEthereumChain}
           >
             Add Polygon Chain
-          </button>
+          </Button>
 
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={readOnlyCalls}
           >
             readOnlyCalls
-          </button>
+          </Button>
         </div>
       ) : (
         <div>
-          <button
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={connect}
           >
             Connect
-          </button>
-          <button
+          </Button>
+          <Button
             className={"Button-Normal"}
             style={{ padding: 10, margin: 10 }}
             onClick={connectAndSign}
           >
             Connect w/ Sign
-          </button>
+          </Button>
         </div>
       )}
 
-      <button
+      <Button
         className={"Button-Danger"}
         style={{ padding: 10, margin: 10 }}
         onClick={terminate}
       >
         Terminate
-      </button>
+      </Button>
     </div>
   );
-};
-
-export default App;
+}

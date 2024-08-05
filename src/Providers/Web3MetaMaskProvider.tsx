@@ -1,22 +1,21 @@
+"use client";
+
 import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
 import { MetaMaskProvider } from "@metamask/sdk-react";
 
 const openDeeplink = (link: string) => {
-  // You might want to implement your own logic here
-  // to determine if the link can be opened
-  const canOpenLink = true; // This should be determined based on your app's logic
-
+  const canOpenLink = true;
   if (canOpenLink) {
-    // Use window.open for web environments
     window.open(link, "_blank");
   }
 };
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+export default function MetaMaskWeb3({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
     <MetaMaskProvider
       debug={false}
       sdkOptions={{
@@ -36,7 +35,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         },
       }}
     >
-      <App />
+      {children}
     </MetaMaskProvider>
-  </React.StrictMode>
-);
+  );
+}
