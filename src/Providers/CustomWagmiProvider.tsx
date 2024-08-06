@@ -1,69 +1,67 @@
+// CustomWagmiProvider.js
 "use client";
 
-import { ChainType, EVM, config, createConfig, getChains } from '@lifi/sdk';
-import { useSyncWagmiConfig } from '@lifi/wallet-management';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { getWalletClient, switchChain } from '@wagmi/core';
-import { type FC, type PropsWithChildren } from 'react';
-import { createClient, http } from 'viem';
-import { mainnet , sepolia , base} from 'viem/chains';
-import type { Config, CreateConnectorFn } from 'wagmi';
+import React, { FC, PropsWithChildren, useEffect, useState } from 'react';
 import { WagmiProvider, createConfig as createWagmiConfig } from 'wagmi';
-import { injected } from 'wagmi/connectors';
+import { useSyncWagmiConfig } from '@lifi/wallet-management';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { getWalletClient, switchChain } from '@wagmi/core';
+import { mainnet, sepolia, base } from 'viem/chains';
+import { ChainType, EVM, config, createConfig, getChains } from '@lifi/sdk';
+import { createConnectors } from './metamaskConnector';
+import { createClient, http } from 'viem';
+import { useSDK } from '@metamask/sdk-react';
 
-// List of Wagmi connectors
-const connectors: CreateConnectorFn[] = [injected()];
+const queryClient = new QueryClient();
 
-// Create Wagmi config with default chain and without connectors
-const wagmiConfig: Config = createWagmiConfig({
-  chains: [sepolia],
-  multiInjectedProviderDiscovery: false,
-  
-  client({ chain }) {
-    
-    return createClient({ chain, transport: http() });
-  },
-  
-});
-
-// Create SDK config using Wagmi actions and configuration
-createConfig({
-  integrator: 'LIFI_TEST',
-  providers: [
-    EVM({
-      getWalletClient: () => getWalletClient(wagmiConfig),
-      switchChain: async (chainId) => {
-        const chain = await switchChain(wagmiConfig, { chainId });
-        return getWalletClient(wagmiConfig, { chainId: chain.id });
-      },
-    }),
-  ],
-  // We disable chain preloading and will update chain configuration in runtime
-  preloadChains: false,
-});
-const queryClient = new QueryClient()
 export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
-//   // Load EVM chains from LI.FI API using getChains action from LI.FI SDK
-  // const { data: chains } = useQuery({
-  //   queryKey: ['chains'] as const,
-  //   queryFn: async () => {
-  //     const chains = await getChains({
-  //       chainTypes: [ChainType.EVM],
-  //     });
-  //     // Update chain configuration for LI.FI SDK
-  //     config.setChains(chains);
-  //     return chains;
-  //   },
-  // });
+  const { sdk, connected, connecting, provider, chainId, account, balance } = useSDK();
+  const [wagmiConfig, setWagmiConfig] = useState(null);
+
+  useEffect(() => {
+    if (provider) {
+      const connectors = createConnectors(provider);
+
+      const config = createWagmiConfig({
+        chains: [mainnet],
+        multiInjectedProviderDiscovery: false,
+        connectors,
+        client({ chain }) {
+          return createClient({ chain, transport: http() });
+        },
+      });
+
+      createConfig({
+        integrator: 'LiFi_Test',
+        providers: [
+          EVM({
+            getWalletClient: () => getWalletClient(config),
+            switchChain: async (chainId) => {
+              const chain = await switchChain(config, { chainId });
+              return getWalletClient(config, { chainId: chain.id });
+            },
+          }),
+        ],
+        // We disable chain preloading and will update chain configuration in runtime
+        preloadChains: false,
+      });
+
+      setWagmiConfig(config);
+    }
+  }, [provider]);
+
+  if (!wagmiConfig) {
+    return null; // or a loading indicator
+  }
 
   // Synchronize fetched chains with Wagmi config and update connectors
-   useSyncWagmiConfig(wagmiConfig, connectors);
-
+  // useSyncWagmiConfig(wagmiConfig, createConnectors(provider)); // add chains
+  
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount={true}>
-       <QueryClientProvider client={queryClient}> 
-      {children}
-      </QueryClientProvider> 
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
     </WagmiProvider>
   );
 };
