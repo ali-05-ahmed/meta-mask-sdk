@@ -27,6 +27,12 @@ import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
 import { CarouselNext } from "./ui/carousel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  calculateTotalAmountUSD,
+  calculateTotalGasCost,
+  formatValue,
+  getShortWords,
+} from "@/lib/utils";
 
 type Token = {
   name: string;
@@ -48,6 +54,11 @@ export default function Swap() {
   const [buyerValue, setBuyerValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+
+  const selectedRoute = routes?.[selectedRouteIndex];
+  const allFeeCosts =
+    selectedRoute?.steps.flatMap((step: any) => step.estimate.feeCosts) || [];
+  const totalAmountUSD = calculateTotalAmountUSD(allFeeCosts);
 
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
@@ -97,12 +108,18 @@ export default function Swap() {
   useEffect(() => {
     const fetchRoutes = async () => {
       setIsLoading(true);
-      if (!sellerToken || !buyerToken || !sellerValue) return;
+      if (!sellerToken || !buyerToken || !sellerValue) {
+        setIsLoading(false);
+        return;
+      }
 
       const sellerTokenObj = sellerTokens.find((t) => t.name === sellerToken);
       const buyerTokenObj = buyerTokens.find((t) => t.name === buyerToken);
 
-      if (!sellerTokenObj || !buyerTokenObj) return;
+      if (!sellerTokenObj || !buyerTokenObj) {
+        setIsLoading(false);
+        return;
+      }
 
       const fetchedRoutes: any = await requestRoutes({
         fromChainId: sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
@@ -113,9 +130,12 @@ export default function Swap() {
           parseFloat(sellerValue) *
           10 ** sellerTokenObj.decimals
         ).toString(),
+        
       });
+
       setRoutes(fetchedRoutes);
       setIsLoading(false);
+
       if (fetchedRoutes && fetchedRoutes[0] && fetchedRoutes[0].toAmount) {
         const toAmount =
           parseFloat(fetchedRoutes[0].toAmount) / 10 ** buyerTokenObj.decimals;
@@ -123,9 +143,7 @@ export default function Swap() {
       }
     };
 
-    if (sellerToken && buyerToken && sellerValue) {
-      fetchRoutes();
-    }
+    fetchRoutes();
   }, [
     sellerChain,
     buyerChain,
@@ -145,12 +163,27 @@ export default function Swap() {
     }
   }, [sellerTokens, buyerTokens, sellerToken, buyerToken]);
 
+  useEffect(() => {
+    if (
+      routes &&
+      routes[selectedRouteIndex] &&
+      routes[selectedRouteIndex].toAmount
+    ) {
+      const buyerTokenObj = buyerTokens.find((t) => t.name === buyerToken);
+      if (buyerTokenObj) {
+        const toAmount =
+          parseFloat(routes[selectedRouteIndex].toAmount) /
+          10 ** buyerTokenObj.decimals;
+        setBuyerValue(toAmount.toFixed(6));
+      }
+    }
+  }, [routes, selectedRouteIndex, buyerToken, buyerTokens]);
+
   return (
     <Drawer>
       <DrawerTrigger>
         <Button>Swap</Button>
       </DrawerTrigger>
-
       <DrawerContent className="bg-[#1a222c] border-none flex justify-center">
         <DrawerHeader>
           <DrawerTitle className="text-center text-sm text-white flex justify-between items-center">
@@ -172,7 +205,7 @@ export default function Swap() {
                   defaultValue={"ARB"}
                   value={sellerValue}
                   setValue={setSellerValue}
-                  fromAmtUSD={routes?.[selectedRouteIndex]?.fromAmountUSD ?? ""}
+                  fromAmtUSD={selectedRoute?.fromAmountUSD ?? ""}
                   isLoading={isLoading}
                 />
                 <SwapInput
@@ -185,7 +218,7 @@ export default function Swap() {
                   tokens={buyerTokens}
                   value={buyerValue}
                   setValue={(value) => setBuyerValue(value)}
-                  toAmtUSD={routes?.[selectedRouteIndex]?.toAmountUSD ?? ""}
+                  toAmtUSD={selectedRoute?.toAmountUSD ?? ""}
                   isLoading={isLoading}
                 />
               </div>
@@ -231,19 +264,14 @@ export default function Swap() {
                         <>
                           <img
                             src={
-                              routes?.[selectedRouteIndex]?.steps?.[0]
-                                ?.toolDetails?.logoURI
+                              selectedRoute?.steps?.[0]?.toolDetails?.logoURI
                             }
-                            alt={
-                              routes?.[selectedRouteIndex]?.steps?.[0]
-                                ?.toolDetails?.name
-                            }
+                            alt={selectedRoute?.steps?.[0]?.toolDetails?.name}
                             className="w-5 h-5 mr-1 rounded-full border bg-gray-400"
                           />
-                          {
-                            routes?.[selectedRouteIndex]?.steps?.[0]
-                              ?.toolDetails?.name
-                          }
+                          {getShortWords(
+                            selectedRoute?.steps?.[0]?.toolDetails?.name
+                          )}
                         </>
                       )}
                     </span>
@@ -254,12 +282,8 @@ export default function Swap() {
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
                         <>
-                          1{" "}
-                          {routes?.[selectedRouteIndex]?.fromToken?.symbol ??
-                            ""}{" "}
-                          ={" "}
-                          {routes?.[selectedRouteIndex]?.fromAmountUSD ??
-                            "000,000.00000000"}
+                          1 {selectedRoute?.toToken?.symbol ?? ""} ={" "}
+                          {selectedRoute?.toAmountUSD ?? "000,000.00000000"}
                         </>
                       )}
                     </p>
@@ -283,7 +307,7 @@ export default function Swap() {
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
                         <>
-                          {routes?.[selectedRouteIndex]?.gasCostUSD
+                          {selectedRoute?.gasCostUSD
                             ? `$${parseFloat(
                                 routes[selectedRouteIndex].gasCostUSD
                               ).toFixed(4)}`
@@ -295,7 +319,16 @@ export default function Swap() {
                   </div>
                   <div className="flex justify-between">
                     <dt>Protocol Fee</dt>
-                    <dt>0.0000000(〜$0.0000)</dt>
+                    <dt>
+                      {isLoading ? (
+                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                      ) : (
+                        <>
+                          {calculateTotalGasCost(selectedRoute)}(〜$
+                          {totalAmountUSD.toFixed(2)})
+                        </>
+                      )}
+                    </dt>
                   </div>
                   <div className="flex justify-between">
                     <dt>Minimum Received</dt>
@@ -303,7 +336,10 @@ export default function Swap() {
                       {isLoading ? (
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
-                        <>{routes?.[selectedRouteIndex]?.toAmountUSD} USD</>
+                        <>
+                          {selectedRoute?.toAmountUSD ?? "000.00"}{" "}
+                          {selectedRoute?.toToken?.symbol ?? ""}
+                        </>
                       )}
                     </dt>
                   </div>
@@ -322,47 +358,60 @@ export default function Swap() {
           <DrawerFooter className="text-xs p-4">
             <ScrollArea className="h-[400px]">
               <div className="space-y-2">
-                {Array.isArray(routes) && routes.length > 0 ? (
-                  <>
-                    {routes?.map((route: any, idx: number) => (
+                {isLoading ? (
+                  Array(3)
+                    .fill(0)
+                    .map((_, index) => (
                       <div
-                        key={idx}
-                        className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs cursor-pointer ${
-                          idx === selectedRouteIndex
-                            ? "border border-green-500"
-                            : ""
-                        }`}
-                        onClick={() => setSelectedRouteIndex(idx)}
+                        key={index}
+                        className="h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between"
                       >
-                        <p className="flex items-center justify-between">
-                          <span className="font-bold">
-                            {route.toAmount ?? "000,000.0000000"}{" "}
-                            {route.toToken?.symbol}
-                          </span>
-                          {idx === 0 ? (
-                            <span className="text-green-500">Best</span>
-                          ) : (
-                            <span className="text-pink-700">-000.00%</span>
-                          )}
-                        </p>
-                        <p className="flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            {/* <img
-                              src={route?.steps?.[0]?.toolDetails?.logoURI}
-                              alt={route?.steps?.[0]?.toolDetails?.name}
-                              className="w-4 h-4 rounded-full border bg-gray-400"
-                            /> */}
-                            {route?.steps?.[0]?.toolDetails?.name}{" "}
-                            <LockOpen className="text-emerald-700 w-4 h-4" />
-                          </span>
-                          <span className="flex items-center gap-2">
-                            <Fuel className="w-4 h-4" />
-                            $0.0000 ≈ 00.0000 after gas fees
-                          </span>
-                        </p>
+                        <Skeleton className="w-1/2 h-4 bg-gray-400 rounded" />
+                        <div className="flex justify-between">
+                          <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
+                          <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
+                        </div>
                       </div>
-                    ))}
-                  </>
+                    ))
+                ) : Array.isArray(routes) && routes.length > 0 ? (
+                  routes.map((route: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs cursor-pointer ${
+                        idx === selectedRouteIndex
+                          ? "border border-green-500"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedRouteIndex(idx)}
+                    >
+                      <p className="flex items-center justify-between">
+                        <span className="font-bold">
+                          {formatValue(route.toAmount, 18) ?? "000,000.0000000"}{" "}
+                          {route.toToken?.symbol}
+                        </span>
+                        {idx === 0 ? (
+                          <span className="text-green-500">Best</span>
+                        ) : (
+                          <span className="text-pink-700">-000.00%</span>
+                        )}
+                      </p>
+                      <p className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <img
+                            src={route?.steps?.[0]?.toolDetails?.logoURI}
+                            alt={route?.steps?.[0]?.toolDetails?.name}
+                            className="w-4 h-4 rounded-full border bg-gray-400"
+                          />
+                          {getShortWords(route?.steps?.[0]?.toolDetails?.name)}{" "}
+                          <LockOpen className="text-emerald-700 w-4 h-4" />
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Fuel className="w-4 h-4" />
+                          $0.0000 ≈ 00.0000 after gas fees
+                        </span>
+                      </p>
+                    </div>
+                  ))
                 ) : (
                   <p className="text-center text-2xl font-bold">N/A</p>
                 )}

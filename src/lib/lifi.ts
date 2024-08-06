@@ -88,8 +88,6 @@ export const getTokensFromChain = (_ChainId: any) => {
   return [];
 };
 
-// ... existing code ...
-
 const getTokenDecimalsFromChain = (chainId: any, tokenAddress: any): any => {
   const tokens = getTokensFromChain(chainId);
 
@@ -102,8 +100,6 @@ const getTokenDecimalsFromChain = (chainId: any, tokenAddress: any): any => {
   );
   return token?.decimals;
 };
-
-// ... existing code ...
 
 // uniSwap arb : 0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0         Decimals :18 uint8
 // USDC arb    : 0xaf88d065e77c8cC2239327C5EDb3A432268e5831         Decimals :6 uint8
