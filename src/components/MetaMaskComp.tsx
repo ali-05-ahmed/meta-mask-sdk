@@ -1,7 +1,7 @@
 "use client";
 
 import { useSDK } from "@metamask/sdk-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   send_eth_signTypedData_v4,
   send_personal_sign,
@@ -16,11 +16,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAccount , useBalance, useConnect, useReconnect } from "wagmi";
+import { injected , reconnect } from "@wagmi/core";
+// import { connectors } from "@/Providers/CustomWagmiProvider";
+import { useSignMessage , useConfig } from 'wagmi'
+import { _connectors, wagmiConfig } from "@/Providers/CustomWagmiProvider";
+import { x1Testnet } from "viem/chains";
+
 
 export default function MetaMaskComp() {
   const [response, setResponse] = useState<unknown>("");
   const { sdk, connected, connecting, provider, chainId, account, balance } =
     useSDK();
+
+   const {address , chainId:wagmiChainID , chain } = useAccount()
+   const {data } = useBalance()
+   const {connect:wagmiConnect  ,connectAsync ,connectors , context , status} = useConnect()
+   const { reconnect } = useReconnect()
+   const { signMessage } = useSignMessage()
+   const { _internal, } = useConfig()
+
+   const [ready, setReady] = useState(false)
 
   const languages = sdk?.availableLanguages ?? ["en"];
 
@@ -32,6 +48,12 @@ export default function MetaMaskComp() {
     localStorage.setItem("MetaMaskSDKLng", currentLanguage);
     window.location.reload();
   };
+
+  useEffect(() => {
+    ;(async () => {
+      // connect({connector: connectors.find((connector) => connector.id === 'injected')})
+    })()
+  }, [connectors , address , chainId])
 
   const connectAndSign = async () => {
     try {
@@ -46,7 +68,37 @@ export default function MetaMaskComp() {
 
   const connect = async () => {
     try {
-      await sdk?.connect();
+      // await sdk?.connect();
+      try {
+        console.log(connectors)
+      //   let newConnector = injected({
+      //     target() { 
+      //             return { 
+      //               id: connectors[0].id, 
+      //               name: connectors[0].name, 
+      //               provider: provider, 
+      //             } 
+      //           }, 
+      //   })
+      // //  wagmiConnect({ connector : newConnector })
+      //   console.log(connectors)
+         wagmiConnect({ connector : connectors[0] })
+      } catch (error) {
+        console.log("Connection Error",error)
+      }
+    
+
+    //  connectors.push(
+    //   injected({
+    //     target() { 
+    //       return { 
+    //         id: 'windowProvider', 
+    //         name: 'Window Provider', 
+    //         provider: provider, 
+    //       } 
+    //     }, 
+    //   })
+    //  )
     } catch (err) {
       console.warn(`failed to connect..`, err);
     }
@@ -135,7 +187,8 @@ export default function MetaMaskComp() {
       setResponse(`invalid ethereum provider`);
       return;
     }
-    const result = await send_personal_sign(provider);
+    // const result = await send_personal_sign(provider);
+    const result = signMessage({ message: 'hello world' });
     setResponse(result);
   };
 
@@ -161,10 +214,13 @@ export default function MetaMaskComp() {
       <h1>Next js MetaMask SDK</h1>
       <div className={"Info-Status"}>
         <p>{`Connected chain: ${chainId}`}</p>
+        <p>{`Connected wagmiChainID: ${wagmiChainID}`}</p>
         <p>{`Connected account: ${account}`}</p>
+        <p>{`Connected wagmi account: ${address}`}</p>
         <p>{`Account balance: ${balance}`}</p>
         <p>{`Last request response: ${response}`}</p>
         <p>{`Connected: ${connected}`}</p>
+        <p>{`status: ${status}`}</p>
       </div>
 
       <div className="sdkConfig">

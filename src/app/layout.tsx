@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import MetaMaskWeb3 from "@/Providers/Web3MetaMaskProvider";
+import {CustomWagmiProvider} from "@/Providers/CustomWagmiProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <MetaMaskWeb3>{children}</MetaMaskWeb3>
+        <MetaMaskWeb3>
+        <CustomWagmiProvider>
+        {children}
+        </CustomWagmiProvider>
+        </MetaMaskWeb3>
       </body>
     </html>
   );
