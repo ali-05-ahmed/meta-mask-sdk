@@ -31,7 +31,7 @@ export default function MetaMaskWeb3({
         openDeeplink: openDeeplink,
         dappMetadata: {
           name: "Demo React App",
-          url: window.location.protocol + "//" + window.location.host,
+          url: window?.location.protocol + "//" + window?.location.host,
         },
       }}
     >

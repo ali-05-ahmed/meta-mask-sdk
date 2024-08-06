@@ -44,8 +44,13 @@ export const requestRoutes = async ({
     // ),
     fromAmount,
   };
-  const result = await getRoutes(routesRequest);
-  const routes = result.routes;
+  let routes : any
+  try {
+    const result = await getRoutes(routesRequest);
+    routes = result.routes;
+  } catch (error) {
+    routes = []
+  }
   console.log(routes);
   return routes;
 };

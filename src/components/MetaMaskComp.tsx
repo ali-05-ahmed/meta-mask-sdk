@@ -1,7 +1,7 @@
 "use client";
 
 import { useSDK } from "@metamask/sdk-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   send_eth_signTypedData_v4,
   send_personal_sign,
@@ -16,11 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAccount , useBalance, useConnect, useReconnect} from "wagmi";
+import { injected , reconnect } from "@wagmi/core";
+
 
 export default function MetaMaskComp() {
   const [response, setResponse] = useState<unknown>("");
   const { sdk, connected, connecting, provider, chainId, account, balance } =
     useSDK();
+
+   const {address , chainId:wagmiChainID } = useAccount()
+   const {data } = useBalance()
+   const {connect:wagmiConnect  ,connectAsync} = useConnect()
+   const { reconnect } = useReconnect()
 
   const languages = sdk?.availableLanguages ?? ["en"];
 
@@ -32,6 +40,10 @@ export default function MetaMaskComp() {
     localStorage.setItem("MetaMaskSDKLng", currentLanguage);
     window.location.reload();
   };
+
+  // useEffect(() => {
+  //   reconnect()
+  // }, [])
 
   const connectAndSign = async () => {
     try {
@@ -46,7 +58,17 @@ export default function MetaMaskComp() {
 
   const connect = async () => {
     try {
-      await sdk?.connect();
+      // await sdk?.connect();
+      wagmiConnect({ connector:  injected({
+        target() { 
+          return { 
+            id: 'windowProvider', 
+            name: 'Window Provider', 
+            provider: provider, 
+          } 
+        }, 
+      })
+     })
     } catch (err) {
       console.warn(`failed to connect..`, err);
     }
@@ -161,7 +183,9 @@ export default function MetaMaskComp() {
       <h1>Next js MetaMask SDK</h1>
       <div className={"Info-Status"}>
         <p>{`Connected chain: ${chainId}`}</p>
+        <p>{`Connected wagmiChainID: ${wagmiChainID}`}</p>
         <p>{`Connected account: ${account}`}</p>
+        <p>{`Connected wagmi account: ${address}`}</p>
         <p>{`Account balance: ${balance}`}</p>
         <p>{`Last request response: ${response}`}</p>
         <p>{`Connected: ${connected}`}</p>
