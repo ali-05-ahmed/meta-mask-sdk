@@ -47,6 +47,7 @@ export default function Swap() {
   const [sellerValue, setSellerValue] = useState<string>("");
   const [buyerValue, setBuyerValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
@@ -171,7 +172,7 @@ export default function Swap() {
                   defaultValue={"ARB"}
                   value={sellerValue}
                   setValue={setSellerValue}
-                  fromAmtUSD={routes?.[0]?.fromAmountUSD ?? ""}
+                  fromAmtUSD={routes?.[selectedRouteIndex]?.fromAmountUSD ?? ""}
                   isLoading={isLoading}
                 />
                 <SwapInput
@@ -184,7 +185,7 @@ export default function Swap() {
                   tokens={buyerTokens}
                   value={buyerValue}
                   setValue={(value) => setBuyerValue(value)}
-                  toAmtUSD={routes?.[0]?.toAmountUSD ?? ""}
+                  toAmtUSD={routes?.[selectedRouteIndex]?.toAmountUSD ?? ""}
                   isLoading={isLoading}
                 />
               </div>
@@ -229,11 +230,20 @@ export default function Swap() {
                       ) : (
                         <>
                           <img
-                            src={routes?.[0]?.steps?.[0]?.toolDetails?.logoURI}
-                            alt={routes?.[0]?.steps?.[0]?.toolDetails?.name}
+                            src={
+                              routes?.[selectedRouteIndex]?.steps?.[0]
+                                ?.toolDetails?.logoURI
+                            }
+                            alt={
+                              routes?.[selectedRouteIndex]?.steps?.[0]
+                                ?.toolDetails?.name
+                            }
                             className="w-5 h-5 mr-1 rounded-full border bg-gray-400"
                           />
-                          {routes?.[0]?.steps?.[0]?.toolDetails?.name}
+                          {
+                            routes?.[selectedRouteIndex]?.steps?.[0]
+                              ?.toolDetails?.name
+                          }
                         </>
                       )}
                     </span>
@@ -244,15 +254,21 @@ export default function Swap() {
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
                         <>
-                          1 {routes?.[0]?.fromToken?.symbol ?? ""} ={" "}
-                          {routes?.[0]?.fromAmountUSD ?? "000,000.00000000"}
+                          1{" "}
+                          {routes?.[selectedRouteIndex]?.fromToken?.symbol ??
+                            ""}{" "}
+                          ={" "}
+                          {routes?.[selectedRouteIndex]?.fromAmountUSD ??
+                            "000,000.00000000"}
                         </>
                       )}
                     </p>
                     {isLoading ? (
                       <Skeleton className="w-[80px] h-2 bg-gray-400 rounded-lg" />
                     ) : (
-                      <p className="text-green-500">Best</p>
+                      <p className="text-green-500">
+                        {selectedRouteIndex === 0 ? "Best" : ""}
+                      </p>
                     )}
                     <ChevronRight />
                   </span>
@@ -267,8 +283,10 @@ export default function Swap() {
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
                         <>
-                          {routes?.[0]?.gasCostUSD
-                            ? `$${parseFloat(routes[0].gasCostUSD).toFixed(4)}`
+                          {routes?.[selectedRouteIndex]?.gasCostUSD
+                            ? `$${parseFloat(
+                                routes[selectedRouteIndex].gasCostUSD
+                              ).toFixed(4)}`
                             : ""}
                           (〜$0.0005)
                         </>
@@ -281,7 +299,13 @@ export default function Swap() {
                   </div>
                   <div className="flex justify-between">
                     <dt>Minimum Received</dt>
-                    <dt>000,000,000.00000000 USD</dt>
+                    <dt>
+                      {isLoading ? (
+                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                      ) : (
+                        <>{routes?.[selectedRouteIndex]?.toAmountUSD} USD</>
+                      )}
+                    </dt>
                   </div>
                 </dl>
               </div>
@@ -300,34 +324,40 @@ export default function Swap() {
               <div className="space-y-2">
                 {Array.isArray(routes) && routes.length > 0 ? (
                   <>
-                    {routes?.map((route: any, idx: any) => (
+                    {routes?.map((route: any, idx: number) => (
                       <div
                         key={idx}
-                        className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs ${
-                          idx === 0 ? "border border-green-500" : ""
+                        className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs cursor-pointer ${
+                          idx === selectedRouteIndex
+                            ? "border border-green-500"
+                            : ""
                         }`}
+                        onClick={() => setSelectedRouteIndex(idx)}
                       >
                         <p className="flex items-center justify-between">
                           <span className="font-bold">
-                            {route.toAmount ?? "000,000.0000000"}
+                            {route.toAmount ?? "000,000.0000000"}{" "}
+                            {route.toToken?.symbol}
                           </span>
                           {idx === 0 ? (
                             <span className="text-green-500">Best</span>
                           ) : (
-                            <span className="text-pink-700">-00.00%</span>
+                            <span className="text-pink-700">-000.00%</span>
                           )}
                         </p>
                         <p className="flex items-center justify-between">
                           <span className="flex items-center gap-2">
-                            {route?.steps?.toolDetails?.name ?? "unknown"}{" "}
+                            {/* <img
+                              src={route?.steps?.[0]?.toolDetails?.logoURI}
+                              alt={route?.steps?.[0]?.toolDetails?.name}
+                              className="w-4 h-4 rounded-full border bg-gray-400"
+                            /> */}
+                            {route?.steps?.[0]?.toolDetails?.name}{" "}
                             <LockOpen className="text-emerald-700 w-4 h-4" />
                           </span>
                           <span className="flex items-center gap-2">
-                            <Fuel className="w-4 h-4" /> $
-                            {route?.gasCostUSD
-                              ? `${parseFloat(route?.gasCostUSD).toFixed(4)}`
-                              : "0.0000"}{" "}
-                            ≈ {route.afterGasFees ?? "00.0000"} after gas fees
+                            <Fuel className="w-4 h-4" />
+                            $0.0000 ≈ 00.0000 after gas fees
                           </span>
                         </p>
                       </div>
