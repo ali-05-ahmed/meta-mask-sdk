@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "./ui/skeleton";
 
 type InputType = "seller" | "buyer";
 
@@ -32,6 +33,7 @@ type SwapInputProps = {
   fromAmtUSD?: string;
   toAmtUSD?: string;
   balance?: string;
+  isLoading: boolean;
 };
 
 export default function SwapInput({
@@ -47,6 +49,7 @@ export default function SwapInput({
   fromAmtUSD,
   toAmtUSD,
   balance,
+  isLoading,
 }: SwapInputProps) {
   const isSeller = type === "seller";
 
@@ -135,7 +138,11 @@ export default function SwapInput({
         </Select>
       </div>
       <p className="absolute left-5 top-[5.5rem] z-10 text-xs font-thin">
-        〜${isSeller ? fromAmtUSD : toAmtUSD}
+        {isLoading ? (
+          <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+        ) : (
+          <>〜${isSeller ? fromAmtUSD : toAmtUSD}</>
+        )}
       </p>
     </div>
   );
