@@ -21,7 +21,7 @@ import {
 import SwapInput from "./SwapInput";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
-import { checkUserBalance, getTokensFromChain, requestRoutes } from "@/lib/lifi";
+import { checkUserBalance, getTokensFromChain, requestRoutes, userBalance } from "@/lib/lifi";
 import { ChainId } from "@lifi/sdk";
 import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
@@ -34,7 +34,7 @@ import {
   getShortWords,
 } from "@/lib/utils";
 import { Chains, Token } from "@/types/types";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 
 export default function Swap() {
   const [selectedSlippage, setSelectedSlippage] = useState<string>("0.1");
@@ -50,7 +50,8 @@ export default function Swap() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
-  const { address } = useAccount();
+  const { address  } = useAccount();
+  const { data : balance  } = useBalance();
 
   const selectedRoute = routes?.[selectedRouteIndex];
   const allFeeCosts =
@@ -80,6 +81,17 @@ export default function Swap() {
       setSellerToken(token);
     }
   };
+
+
+
+  useEffect(() => { 
+    const fetchBalance = async () => {
+      if(address){
+        console.log("User chain balance", await userBalance(address, 10));
+      }
+    }
+    fetchBalance();
+  },[address])
 
   const handleBuyerTokenChange = (token: string) => {
     if (buyerChain === sellerChain && token === sellerToken) {
@@ -212,6 +224,7 @@ export default function Swap() {
                   setValue={setSellerValue}
                   fromAmtUSD={selectedRoute?.fromAmountUSD ?? ""}
                   isLoading={isLoading}
+                  //balance={userBalance(address, fromChainID)}
                 />
                 <SwapInput
                   type="buyer"

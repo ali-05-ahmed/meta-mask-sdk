@@ -8,7 +8,7 @@ import {
 import { getRoutes } from "@lifi/sdk";
 import { getWalletClient } from "@wagmi/core";
 import { ethers } from "ethers";
-import { http, createPublicClient, extractChain } from "viem";
+import { http, createPublicClient, extractChain , formatUnits } from "viem";
 import * as chains from "viem/chains";
 
 createConfig({
@@ -179,4 +179,26 @@ export const checkUserBalance = async (
      console.log("BALANCE ===>", toChainBalance , fromChainBalance);
      return result;
   
+};
+
+
+export const userBalance = async (
+  address: any,
+  chainId: any,
+) => {
+  const fromViemChain = extractChain({
+    chains: Object.values(chains),
+    id: chainId,
+  });
+  let publicClient = createPublicClient({
+    chain: fromViemChain,
+    transport: http(),
+  });
+ 
+  const fromChainBalance = await publicClient.getBalance({
+    address: address,
+  });
+  let decimals = fromViemChain.nativeCurrency.decimals
+  let formattedBalance = formatUnits(fromChainBalance, decimals);
+  return formattedBalance;
 };

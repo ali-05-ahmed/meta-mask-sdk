@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "./ui/skeleton";
 import { Chains, SwapInputProps } from "@/types/types";
+import { useBalance } from "wagmi";
 
 export default function SwapInput({
   type,
@@ -28,6 +29,7 @@ export default function SwapInput({
   isLoading,
 }: SwapInputProps) {
   const isSeller = type === "seller";
+  
 
   const getChainIcon = (chain: Chains) => {
     return chain === "ARB" ? "/arb.png" : "/base.png";
