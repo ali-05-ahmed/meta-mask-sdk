@@ -1,6 +1,15 @@
-import { createConfig, ChainId, RoutesRequest } from "@lifi/sdk";
+import {
+  createConfig,
+  ChainId,
+  RoutesRequest,
+  getTokenAllowance,
+  getChains,
+} from "@lifi/sdk";
 import { getRoutes } from "@lifi/sdk";
+import { getWalletClient } from "@wagmi/core";
 import { ethers } from "ethers";
+import { http, createPublicClient, extractChain } from "viem";
+import * as chains from "viem/chains";
 
 createConfig({
   integrator: "Your dApp/company name",
@@ -13,6 +22,8 @@ createConfig({
     ],
   },
 });
+
+let fuelChainsID = [ChainId.ETH, ChainId.POL];
 
 export const requestRoutes = async ({
   fromChainId,
@@ -43,13 +54,16 @@ export const requestRoutes = async ({
     //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
     // ),
     fromAmount,
+    options: {
+      slippage: 0.01,
+    },
   };
-  let routes : any
+  let routes: any;
   try {
     const result = await getRoutes(routesRequest);
     routes = result.routes;
   } catch (error) {
-    routes = []
+    routes = [];
   }
   console.log(routes);
   return routes;
@@ -106,8 +120,61 @@ const getTokenDecimalsFromChain = (chainId: any, tokenAddress: any): any => {
   return token?.decimals;
 };
 
-// uniSwap arb : 0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0         Decimals :18 uint8
-// USDC arb    : 0xaf88d065e77c8cC2239327C5EDb3A432268e5831         Decimals :6 uint8
+export const FuelchainCompatibility = (toChainId: any, fromChainId: any) => {
+  if (fuelChainsID.includes(toChainId) && fuelChainsID.includes(fromChainId)) {
+    return true;
+  }
+  return false;
+};
 
-// DAI bas     : 0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb         Decimals :18 uint8
-// USDC bas    : 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913         Decimals :6 uint8
+export const checkUserBalance = async (
+  address: any,
+  fromChainId: any,
+  toChainId: any,
+  // fromTokenAddress: any,
+  // fromAmount: any,
+  toGas:any,
+  fromGas:any
+) => {
+  const fromViemChain = extractChain({
+    chains: Object.values(chains),
+    id: fromChainId,
+  });
+
+  let publicClient = createPublicClient({
+    chain: fromViemChain,
+    transport: http(),
+  });
+
+  const fromChainBalance = await publicClient.getBalance({
+    address: address,
+  });
+  console.log("BALANCE ===>", fromChainBalance);
+  if (fromChainBalance < fromGas) {
+    return false;
+  }
+  let result = {
+    fromGas : true,
+    toGas : false,
+  }
+
+  const toViemChain = extractChain({
+    chains: Object.values(chains),
+    id: toChainId,
+  });
+
+    let toPublicClient = createPublicClient({
+    chain: toViemChain,
+    transport: http(),
+  });
+
+  const toChainBalance = await toPublicClient.getBalance({
+    address: address,
+  });
+  if (toChainBalance > toGas) { 
+       result.toGas = true;
+     }
+     console.log("BALANCE ===>", toChainBalance , fromChainBalance);
+     return result;
+  
+};

@@ -21,7 +21,7 @@ import {
 import SwapInput from "./SwapInput";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
-import { getTokensFromChain, requestRoutes } from "@/lib/lifi";
+import { checkUserBalance, getTokensFromChain, requestRoutes } from "@/lib/lifi";
 import { ChainId } from "@lifi/sdk";
 import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
@@ -33,6 +33,7 @@ import {
   formatValue,
   getShortWords,
 } from "@/lib/utils";
+import { useAccount } from "wagmi";
 
 type Token = {
   name: string;
@@ -54,6 +55,8 @@ export default function Swap() {
   const [buyerValue, setBuyerValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+
+  const { address } = useAccount();
 
   const selectedRoute = routes?.[selectedRouteIndex];
   const allFeeCosts =
@@ -144,6 +147,7 @@ export default function Swap() {
     };
 
     fetchRoutes();
+
   }, [
     sellerChain,
     buyerChain,

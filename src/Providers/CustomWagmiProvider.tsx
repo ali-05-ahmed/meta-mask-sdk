@@ -15,8 +15,8 @@ import { useSDK } from '@metamask/sdk-react';
 const queryClient = new QueryClient();
 
 export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
-  const { sdk, connected, connecting, provider, chainId, account, balance } = useSDK();
-  const [wagmiConfig, setWagmiConfig] = useState(null);
+  const { provider } = useSDK();
+  const [wagmiConfig, setWagmiConfig] = useState<any>(null);
 
   useEffect(() => {
     if (provider) {
