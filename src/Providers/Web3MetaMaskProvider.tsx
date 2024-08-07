@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MetaMaskProvider } from "@metamask/sdk-react";
 
 const openDeeplink = (link: string) => {
@@ -15,6 +14,12 @@ export default function MetaMaskWeb3({
 }: {
   children: React.ReactNode;
 }) {
+  const [dappUrl, setDappUrl] = useState<string>("");
+
+  useEffect(() => {
+    setDappUrl(window.location.protocol + "//" + window.location.host);
+  }, []);
+
   return (
     <MetaMaskProvider
       debug={false}
@@ -31,7 +36,7 @@ export default function MetaMaskWeb3({
         openDeeplink: openDeeplink,
         dappMetadata: {
           name: "Demo React App",
-          url: window?.location.protocol + "//" + window?.location.host,
+          url: dappUrl,
         },
       }}
     >
