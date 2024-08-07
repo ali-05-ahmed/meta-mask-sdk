@@ -1,22 +1,22 @@
-// CustomWagmiProvider.js
 "use client";
 
-import React, { FC, PropsWithChildren, useEffect, useState } from 'react';
-import { WagmiProvider, createConfig as createWagmiConfig } from 'wagmi';
-import { useSyncWagmiConfig } from '@lifi/wallet-management';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { getWalletClient, switchChain } from '@wagmi/core';
-import { mainnet, sepolia, base } from 'viem/chains';
-import { ChainType, EVM, config, createConfig, getChains } from '@lifi/sdk';
-import { createConnectors } from './metamaskConnector';
-import { createClient, http } from 'viem';
-import { useSDK } from '@metamask/sdk-react';
+import React, { FC, PropsWithChildren, useEffect, useState } from "react";
+import { WagmiProvider, createConfig as createWagmiConfig } from "wagmi";
+import { useSyncWagmiConfig } from "@lifi/wallet-management";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getWalletClient, switchChain } from "@wagmi/core";
+import { mainnet, sepolia, base } from "viem/chains";
+import { ChainType, EVM, config, createConfig, getChains } from "@lifi/sdk";
+import { createConnectors } from "./metamaskConnector";
+import { createClient, http } from "viem";
+import { useSDK } from "@metamask/sdk-react";
 
 const queryClient = new QueryClient();
 
 export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
-  const { sdk, connected, connecting, provider, chainId, account, balance } = useSDK();
-  const [wagmiConfig, setWagmiConfig] = useState(null);
+  const { sdk, connected, connecting, provider, chainId, account, balance } =
+    useSDK();
+  const [wagmiConfig, setWagmiConfig] = useState<any>(null);
 
   useEffect(() => {
     if (provider) {
@@ -32,11 +32,11 @@ export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
       });
 
       createConfig({
-        integrator: 'LiFi_Test',
+        integrator: "LiFi_Test",
         providers: [
           EVM({
             getWalletClient: () => getWalletClient(config),
-            switchChain: async (chainId) => {
+            switchChain: async (chainId: any) => {
               const chain = await switchChain(config, { chainId });
               return getWalletClient(config, { chainId: chain.id });
             },
@@ -56,12 +56,10 @@ export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
 
   // Synchronize fetched chains with Wagmi config and update connectors
   // useSyncWagmiConfig(wagmiConfig, createConnectors(provider)); // add chains
-  
+
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount={true}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );
 };

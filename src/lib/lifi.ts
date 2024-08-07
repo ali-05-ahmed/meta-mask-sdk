@@ -20,6 +20,7 @@ export const requestRoutes = async ({
   fromTokenAddress,
   toTokenAddress,
   fromAmount,
+  options,
 }: any) => {
   createConfig({
     integrator: "lifitest",
@@ -43,13 +44,16 @@ export const requestRoutes = async ({
     //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
     // ),
     fromAmount,
+    options: {
+      slippage: options?.slippage || 0.001,
+    },
   };
-  let routes : any
+  let routes: any;
   try {
     const result = await getRoutes(routesRequest);
     routes = result.routes;
   } catch (error) {
-    routes = []
+    routes = [];
   }
   console.log(routes);
   return routes;

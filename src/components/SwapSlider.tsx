@@ -2,7 +2,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext
 } from "@/components/ui/carousel";
 
 export default function SwapSlider({
