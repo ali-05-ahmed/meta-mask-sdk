@@ -10,31 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "./ui/skeleton";
-
-type InputType = "seller" | "buyer";
-
-type Token = {
-  name: string;
-  decimals: number;
-  logo: string;
-  address: string;
-};
-
-type SwapInputProps = {
-  type: InputType;
-  selectedChain: "ARB" | "BAS";
-  setSelectedChain: (chain: "ARB" | "BAS") => void;
-  selectedToken: string;
-  setSelectedToken: (token: string) => void;
-  tokens: Token[];
-  defaultValue: "ARB" | "BAS";
-  value: string | number;
-  setValue: (value: any) => void;
-  fromAmtUSD?: string;
-  toAmtUSD?: string;
-  balance?: string;
-  isLoading: boolean;
-};
+import { Chains, SwapInputProps } from "@/types/types";
 
 export default function SwapInput({
   type,
@@ -53,7 +29,7 @@ export default function SwapInput({
 }: SwapInputProps) {
   const isSeller = type === "seller";
 
-  const getChainIcon = (chain: "ARB" | "BAS") => {
+  const getChainIcon = (chain: Chains) => {
     return chain === "ARB" ? "/arb.png" : "/base.png";
   };
 

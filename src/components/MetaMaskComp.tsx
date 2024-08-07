@@ -20,7 +20,7 @@ import { useAccount , useBalance, useConnect, useReconnect } from "wagmi";
 import { injected , reconnect } from "@wagmi/core";
 // import { connectors } from "@/Providers/CustomWagmiProvider";
 import { useSignMessage , useConfig } from 'wagmi'
-import { _connectors, wagmiConfig } from "@/Providers/CustomWagmiProvider";
+//import { _connectors, wagmiConfig } from "@/Providers/CustomWagmiProvider";
 import { x1Testnet } from "viem/chains";
 
 

@@ -33,20 +33,14 @@ import {
   formatValue,
   getShortWords,
 } from "@/lib/utils";
+import { Chains, Token } from "@/types/types";
 import { useAccount } from "wagmi";
 
-type Token = {
-  name: string;
-  decimals: number;
-  logo: string;
-  address: string;
-};
-
 export default function Swap() {
-  const [selectedSlippage, setSelectedSlippage] = useState<string | null>(null);
+  const [selectedSlippage, setSelectedSlippage] = useState<string>("0.1");
   const [routes, setRoutes] = useState<any>(null);
-  const [sellerChain, setSellerChain] = useState<"ARB" | "BAS">("ARB");
-  const [buyerChain, setBuyerChain] = useState<"ARB" | "BAS">("BAS");
+  const [sellerChain, setSellerChain] = useState<Chains>("ARB");
+  const [buyerChain, setBuyerChain] = useState<Chains>("BAS");
   const [sellerToken, setSellerToken] = useState<string>("");
   const [buyerToken, setBuyerToken] = useState<string>("");
   const [sellerTokens, setSellerTokens] = useState<Token[]>([]);
@@ -65,14 +59,15 @@ export default function Swap() {
 
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
+    console.log("Slippage changed to:", value);
   };
 
-  const handleSellerChainChange = (newChain: "ARB" | "BAS") => {
+  const handleSellerChainChange = (newChain: Chains) => {
     setSellerChain(newChain);
     setSellerToken("");
   };
 
-  const handleBuyerChainChange = (newChain: "ARB" | "BAS") => {
+  const handleBuyerChainChange = (newChain: Chains) => {
     setBuyerChain(newChain);
     setBuyerToken("");
   };
@@ -124,7 +119,10 @@ export default function Swap() {
         return;
       }
 
-      const fetchedRoutes: any = await requestRoutes({
+      const slippageValue = parseFloat(selectedSlippage) / 100;
+      console.log("Sending slippage value:", slippageValue);
+
+      const fetchedRoutes = await requestRoutes({
         fromChainId: sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
         toChainId: buyerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
         fromTokenAddress: sellerTokenObj.address,
@@ -133,7 +131,9 @@ export default function Swap() {
           parseFloat(sellerValue) *
           10 ** sellerTokenObj.decimals
         ).toString(),
-        
+        options: {
+          slippage: slippageValue,
+        },
       });
 
       setRoutes(fetchedRoutes);
@@ -156,6 +156,7 @@ export default function Swap() {
     sellerValue,
     sellerTokens,
     buyerTokens,
+    selectedSlippage,
   ]);
 
   useEffect(() => {
