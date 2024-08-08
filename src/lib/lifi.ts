@@ -7,8 +7,10 @@ import {
 } from "@lifi/sdk";
 import { getRoutes } from "@lifi/sdk";
 import { getWalletClient } from "@wagmi/core";
+import { log } from "console";
 import { ethers } from "ethers";
-import { http, createPublicClient, extractChain , formatUnits } from "viem";
+import { LogOut } from "lucide-react";
+import { http, createPublicClient, extractChain, formatUnits } from "viem";
 import * as chains from "viem/chains";
 
 createConfig({
@@ -19,6 +21,9 @@ createConfig({
     ],
     [ChainId.BAS]: [
       "https://base-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
+    ],
+    [ChainId.POL]: [
+      "https://polygon-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
     ],
   },
 });
@@ -42,6 +47,9 @@ export const requestRoutes = async ({
       [ChainId.BAS]: [
         "https://base-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
       ],
+      [ChainId.POL]: [
+        "https://polygon-mainnet.g.alchemy.com/v2/9pd3-hYoXNIOibbfmTE0NERN0R3yKx5e",
+      ],
     },
   });
 
@@ -55,7 +63,7 @@ export const requestRoutes = async ({
     //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()
     // ),
     fromAmount,
-   
+
     options: {
       slippage: options?.slippage || 0.001,
     },
@@ -106,6 +114,22 @@ export const getTokensFromChain = (_ChainId: any) => {
       },
     ];
   }
+  if (_ChainId === ChainId.POL) {
+    return [
+      {
+        name: "MATIC",
+        decimals: 18,
+        logo: "/matic.svg",
+        address: "0x0000000000000000000000000000000000000000",
+      },
+      {
+        name: "USDC",
+        decimals: 6,
+        logo: "/usdc.webp",
+        address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+      },
+    ];
+  }
   return [];
 };
 
@@ -135,8 +159,8 @@ export const checkUserBalance = async (
   toChainId: any,
   // fromTokenAddress: any,
   // fromAmount: any,
-  toGas:any,
-  fromGas:any
+  toGas: any,
+  fromGas: any
 ) => {
   const fromViemChain = extractChain({
     chains: Object.values(chains),
@@ -156,16 +180,16 @@ export const checkUserBalance = async (
     return false;
   }
   let result = {
-    fromGas : true,
-    toGas : false,
-  }
+    fromGas: true,
+    toGas: false,
+  };
 
   const toViemChain = extractChain({
     chains: Object.values(chains),
     id: toChainId,
   });
 
-    let toPublicClient = createPublicClient({
+  let toPublicClient = createPublicClient({
     chain: toViemChain,
     transport: http(),
   });
@@ -173,19 +197,14 @@ export const checkUserBalance = async (
   const toChainBalance = await toPublicClient.getBalance({
     address: address,
   });
-  if (toChainBalance > toGas) { 
-       result.toGas = true;
-     }
-     console.log("BALANCE ===>", toChainBalance , fromChainBalance);
-     return result;
-  
+  if (toChainBalance > toGas) {
+    result.toGas = true;
+  }
+  console.log("BALANCE ===>", toChainBalance, fromChainBalance);
+  return result;
 };
 
-
-export const userBalance = async (
-  address: any,
-  chainId: any,
-) => {
+export const userBalance = async (address: any, chainId: any) => {
   const fromViemChain = extractChain({
     chains: Object.values(chains),
     id: chainId,
@@ -194,11 +213,11 @@ export const userBalance = async (
     chain: fromViemChain,
     transport: http(),
   });
- 
+
   const fromChainBalance = await publicClient.getBalance({
     address: address,
   });
-  let decimals = fromViemChain.nativeCurrency.decimals
+  let decimals = fromViemChain.nativeCurrency.decimals;
   let formattedBalance = formatUnits(fromChainBalance, decimals);
   return formattedBalance;
 };

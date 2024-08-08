@@ -29,10 +29,18 @@ export default function SwapInput({
   isLoading,
 }: SwapInputProps) {
   const isSeller = type === "seller";
-  
 
   const getChainIcon = (chain: Chains) => {
-    return chain === "ARB" ? "/arb.png" : "/base.png";
+    switch (chain) {
+      case "ARB":
+        return "/arb.png";
+      case "BAS":
+        return "/base.png";
+      case "POL":
+        return "/matic.svg";
+      default:
+        return "/default.png";
+    }
   };
 
   const handleMaxClick = () => {
@@ -65,7 +73,7 @@ export default function SwapInput({
       <div className="absolute right-4 space-y-2">
         <Select
           defaultValue={defaultValue}
-          onValueChange={(value: "ARB" | "BAS") => setSelectedChain(value)}
+          onValueChange={(value: Chains) => setSelectedChain(value)}
         >
           <SelectTrigger className="w-[100px] bg-[#1a222c] border-none">
             <div className="flex gap-1 items-center">
@@ -81,6 +89,7 @@ export default function SwapInput({
             <SelectGroup>
               <SelectItem value="ARB">ARB</SelectItem>
               <SelectItem value="BAS">BAS</SelectItem>
+              <SelectItem value="POL">POL</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -108,6 +117,11 @@ export default function SwapInput({
                   value={token.name}
                   className="flex items-center gap-1"
                 >
+                  {/* <img
+                    src={token.logo}
+                    alt={token.name}
+                    className="h-4 w-4 rounded-full mr-2"
+                  /> */}
                   <p>{token.name}</p>
                 </SelectItem>
               ))}

@@ -9,12 +9,12 @@ export type Token = {
 
 export type SwapInputProps = {
   type: InputType;
-  selectedChain: "ARB" | "BAS";
-  setSelectedChain: (chain: "ARB" | "BAS") => void;
+  selectedChain: Chains;
+  setSelectedChain: (chain: Chains) => void;
   selectedToken: string;
   setSelectedToken: (token: string) => void;
   tokens: Token[];
-  defaultValue: "ARB" | "BAS";
+  defaultValue: Chains;
   value: string | number;
   setValue: (value: any) => void;
   fromAmtUSD?: string;
@@ -23,6 +23,4 @@ export type SwapInputProps = {
   isLoading: boolean;
 };
 
-
-export type Chains = "ARB" | "BAS";
-
+export type Chains = "ARB" | "BAS" | "POL";

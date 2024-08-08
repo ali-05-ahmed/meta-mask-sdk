@@ -21,7 +21,12 @@ import {
 import SwapInput from "./SwapInput";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
-import { checkUserBalance, getTokensFromChain, requestRoutes, userBalance } from "@/lib/lifi";
+import {
+  checkUserBalance,
+  getTokensFromChain,
+  requestRoutes,
+  userBalance,
+} from "@/lib/lifi";
 import { ChainId } from "@lifi/sdk";
 import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
@@ -49,14 +54,34 @@ export default function Swap() {
   const [buyerValue, setBuyerValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
-
-  const { address  } = useAccount();
-  const { data : balance  } = useBalance();
-
+  const [isSwapDisabled, setIsSwapDisabled] = useState(true);
+  const [buttonText, setButtonText] = useState("Connect Wallet");
+  const { address, isConnected } = useAccount();
+  const { data: balance } = useBalance();
+  const RouteIsNull =
+    routes?.[selectedRouteIndex] === undefined ||
+    routes?.[selectedRouteIndex] === null;
   const selectedRoute = routes?.[selectedRouteIndex];
   const allFeeCosts =
     selectedRoute?.steps.flatMap((step: any) => step.estimate.feeCosts) || [];
   const totalAmountUSD = calculateTotalAmountUSD(allFeeCosts);
+
+  const getChainId = (chain: Chains): ChainId => {
+    switch (chain) {
+      case "ARB":
+        return ChainId.ARB;
+      case "BAS":
+        return ChainId.BAS;
+      case "POL":
+        return ChainId.POL;
+      default:
+        throw new Error("Unsupported chain");
+    }
+  };
+
+  const handleClick = () => {
+    console.log(selectedRoute);
+  };
 
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
@@ -82,16 +107,30 @@ export default function Swap() {
     }
   };
 
+  useEffect(() => {
+    if (!isConnected) {
+      setIsSwapDisabled(true);
+      setButtonText("Connect Wallet");
+    } else if (RouteIsNull) {
+      setIsSwapDisabled(true);
+      setButtonText("No Route Available");
+    } else if (isLoading) {
+      setIsSwapDisabled(true);
+      setButtonText("Loading...");
+    } else {
+      setIsSwapDisabled(false);
+      setButtonText("Swap");
+    }
+  }, [isConnected, RouteIsNull, isLoading]);
 
-
-  useEffect(() => { 
+  useEffect(() => {
     const fetchBalance = async () => {
-      if(address){
+      if (address) {
         console.log("User chain balance", await userBalance(address, 10));
       }
-    }
+    };
     fetchBalance();
-  },[address])
+  }, [address]);
 
   const handleBuyerTokenChange = (token: string) => {
     if (buyerChain === sellerChain && token === sellerToken) {
@@ -104,10 +143,10 @@ export default function Swap() {
 
   useEffect(() => {
     const fetchTokens = async () => {
-      const sellerChainId = sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS;
-      const buyerChainId = buyerChain === "ARB" ? ChainId.ARB : ChainId.BAS;
-      const fetchedSellerTokens = await getTokensFromChain(sellerChainId);
-      const fetchedBuyerTokens = await getTokensFromChain(buyerChainId);
+      const sellerChainId = getChainId(sellerChain);
+      const buyerChainId = getChainId(buyerChain);
+      const fetchedSellerTokens: any = await getTokensFromChain(sellerChainId);
+      const fetchedBuyerTokens: any = await getTokensFromChain(buyerChainId);
       setSellerTokens(fetchedSellerTokens || []);
       setBuyerTokens(fetchedBuyerTokens || []);
     };
@@ -135,8 +174,8 @@ export default function Swap() {
       console.log("Sending slippage value:", slippageValue);
 
       const fetchedRoutes = await requestRoutes({
-        fromChainId: sellerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
-        toChainId: buyerChain === "ARB" ? ChainId.ARB : ChainId.BAS,
+        fromChainId: getChainId(sellerChain),
+        toChainId: getChainId(buyerChain),
         fromTokenAddress: sellerTokenObj.address,
         toTokenAddress: buyerTokenObj.address,
         fromAmount: (
@@ -159,7 +198,6 @@ export default function Swap() {
     };
 
     fetchRoutes();
-
   }, [
     sellerChain,
     buyerChain,
@@ -365,7 +403,13 @@ export default function Swap() {
               </div>
             </div>
             <div className="w-full flex flex-col gap-1">
-              <Button className="btn-gradient text-white">Swap</Button>
+              <Button
+                className="btn-gradient text-white"
+                onClick={handleClick}
+                disabled={isSwapDisabled}
+              >
+                {buttonText}{" "}
+              </Button>
               <DrawerClose className="w-full" asChild>
                 <Button variant={"outline"} className="bg-transparent">
                   Close
