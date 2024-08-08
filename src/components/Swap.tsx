@@ -27,6 +27,7 @@ import {
   requestRoutes,
   userBalance,
 } from "@/lib/lifi";
+import { executeRoute, getRoutes } from '@lifi/sdk'
 import { ChainId } from "@lifi/sdk";
 import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
@@ -80,8 +81,13 @@ export default function Swap() {
     }
   };
 
-  const handleClick = () => {
-    console.log(selectedRoute);
+  const handleClick = async () => {
+    const executedRoute = await executeRoute(selectedRoute, {
+      updateRouteHook(selectedRoute: any) {
+        console.log(selectedRoute);
+      },
+  
+    });
   };
 
   const handleSlippageChange = (value: string) => {
