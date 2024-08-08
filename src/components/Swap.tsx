@@ -169,6 +169,7 @@ export default function Swap() {
       setIsLoading(true);
       if (!sellerToken || !buyerToken || !sellerValue) {
         setIsLoading(false);
+        setBuyerValue("0");
         return;
       }
 
@@ -204,6 +205,8 @@ export default function Swap() {
         const toAmount =
           parseFloat(fetchedRoutes[0].toAmount) / 10 ** buyerTokenObj.decimals;
         setBuyerValue(toAmount.toFixed(6));
+      } else {
+        setBuyerValue("0");
       }
     };
 
