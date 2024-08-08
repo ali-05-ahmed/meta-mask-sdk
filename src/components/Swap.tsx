@@ -23,6 +23,7 @@ import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import {
   checkUserBalance,
+  getNativeToken,
   getTokensFromChain,
   requestRoutes,
   userBalance,
@@ -33,13 +34,17 @@ import SwapSlider from "./SwapSlider";
 import { CarouselNext } from "./ui/carousel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  calculateGasCosts,
   calculateTotalAmountUSD,
+  calculateTotalfeeCosts,
   calculateTotalGasCost,
   formatValue,
   getShortWords,
 } from "@/lib/utils";
 import { Chains, Token } from "@/types/types";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount, useBalance , useConfig } from "wagmi";
+import { getBalance } from '@wagmi/core'
+import { Console } from "console";
 
 export default function Swap() {
   const [selectedSlippage, setSelectedSlippage] = useState<string>("0.1");
@@ -58,6 +63,7 @@ export default function Swap() {
   const [buttonText, setButtonText] = useState("Connect Wallet");
   const [customSlippage, setCustomSlippage] = useState<string>("");
   const { address, isConnected } = useAccount();
+  const config = useConfig();
   const _balance = useBalance();
   const RouteIsNull =
     routes?.[selectedRouteIndex] === undefined ||
@@ -118,6 +124,7 @@ export default function Swap() {
   };
 
   useEffect(() => {
+    const swapInit = async () => {
     if (!isConnected) {
       setIsSwapDisabled(true);
       setButtonText("Connect Wallet");
@@ -128,6 +135,19 @@ export default function Swap() {
       setIsSwapDisabled(true);
       setButtonText("Loading...");
     } else if (isConnected && !RouteIsNull) {
+      // await getNativeToken(getChainId(sellerChain));
+      console.log("Route is null" , calculateGasCosts(selectedRoute, getChainId(sellerChain), getChainId(buyerChain)));
+      if (address){
+        const balance = await getBalance(config, {
+          address: address,
+          chainId: getChainId(sellerChain),
+        })
+      console.log("Balance" , balance);
+
+      }
+   
+
+      
       // console.log("Route is null" , selectedRoute?.steps[0]?.estimate?.fee);
       // setIsSwapDisabled(true);
       // setButtonText("Loading...");
@@ -135,7 +155,9 @@ export default function Swap() {
       setIsSwapDisabled(false);
       setButtonText("Swap");
     }
-  }, [isConnected, RouteIsNull, isLoading]);
+  }
+  swapInit();
+  }, [isConnected, RouteIsNull, isLoading, selectedRouteIndex,address]);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -392,7 +414,7 @@ export default function Swap() {
                         <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
                       ) : (
                         <>
-                          {calculateTotalGasCost(selectedRoute)}(〜$
+                          {calculateTotalfeeCosts(selectedRoute)}(〜$
                           {totalAmountUSD.toFixed(2)})
                         </>
                       )}

@@ -4,6 +4,8 @@ import {
   RoutesRequest,
   getTokenAllowance,
   getChains,
+  getToken,
+  getTokens,
 } from "@lifi/sdk";
 import { getRoutes } from "@lifi/sdk";
 import { getWalletClient } from "@wagmi/core";
@@ -220,4 +222,11 @@ export const userBalance = async (address: any, chainId: any) => {
   let decimals = fromViemChain.nativeCurrency.decimals;
   let formattedBalance = formatUnits(fromChainBalance, decimals);
   return formattedBalance;
+};
+
+export const getNativeToken = async (_chainId: any) => {
+ const tokenAddress = '0x0000000000000000000000000000000000000000';
+ const _tokens = await getToken(_chainId, tokenAddress)
+ console.log(_tokens);
+ return _tokens;
 };

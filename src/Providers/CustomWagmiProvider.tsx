@@ -5,7 +5,7 @@ import { WagmiProvider, createConfig as createWagmiConfig } from "wagmi";
 import { useSyncWagmiConfig } from "@lifi/wallet-management";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getWalletClient, switchChain } from "@wagmi/core";
-import { mainnet, sepolia, base } from "viem/chains";
+import { mainnet, sepolia, base, polygon, arbitrum } from "viem/chains";
 import { ChainType, EVM, config, createConfig, getChains } from "@lifi/sdk";
 import { createConnectors } from "./metamaskConnector";
 import { createClient, http } from "viem";
@@ -22,7 +22,7 @@ export const CustomWagmiProvider: FC<PropsWithChildren> = ({ children }) => {
       const connectors = createConnectors(provider);
 
       const config = createWagmiConfig({
-        chains: [mainnet],
+        chains: [mainnet,polygon,base,arbitrum],
         multiInjectedProviderDiscovery: false,
         connectors,
         client({ chain }) {
