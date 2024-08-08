@@ -211,6 +211,8 @@ export default function Swap() {
     };
 
     fetchRoutes();
+    const intervalId = setInterval(fetchRoutes, 40000);
+    return () => clearInterval(intervalId);
   }, [
     sellerChain,
     buyerChain,
