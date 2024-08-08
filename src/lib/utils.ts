@@ -20,13 +20,13 @@ export function calculateTotalAmountUSD(feeCosts: any) {
 }
 
 export const calculateTotalGasCost = (route: {
-  steps: Array<{ estimate?: { gasCosts?: Array<{ amount: string }> } }>;
+  steps: Array<{ estimate?: { feeCosts?: Array<{ amount: string }> } }>;
 }): string => {
   let totalGasCost = ethers.getBigInt(0);
 
   route?.steps?.forEach((step) => {
-    if (step.estimate && step.estimate.gasCosts) {
-      step.estimate.gasCosts.forEach((gasCost) => {
+    if (step.estimate && step.estimate.feeCosts) {
+      step.estimate.feeCosts.forEach((gasCost) => {
         if (gasCost.amount) {
           totalGasCost += ethers.getBigInt(gasCost.amount);
         }

@@ -56,6 +56,7 @@ export default function Swap() {
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [isSwapDisabled, setIsSwapDisabled] = useState(true);
   const [buttonText, setButtonText] = useState("Connect Wallet");
+  const [customSlippage, setCustomSlippage] = useState<string>("");
   const { address, isConnected } = useAccount();
   const _balance = useBalance();
   const RouteIsNull =
@@ -86,6 +87,15 @@ export default function Swap() {
   const handleSlippageChange = (value: string) => {
     setSelectedSlippage(value);
     console.log("Slippage changed to:", value);
+  };
+
+  const handleCustomSlippageChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue < 0 || numValue > 100) {
+      return;
+    }
+    setCustomSlippage(value);
+    setSelectedSlippage(value);
   };
 
   const handleSellerChainChange = (newChain: Chains) => {
@@ -163,6 +173,7 @@ export default function Swap() {
       setIsLoading(true);
       if (!sellerToken || !buyerToken || !sellerValue) {
         setIsLoading(false);
+        setBuyerValue("0");
         return;
       }
 
@@ -198,6 +209,8 @@ export default function Swap() {
         const toAmount =
           parseFloat(fetchedRoutes[0].toAmount) / 10 ** buyerTokenObj.decimals;
         setBuyerValue(toAmount.toFixed(6));
+      } else {
+        setBuyerValue("0");
       }
     };
 
@@ -302,13 +315,8 @@ export default function Swap() {
                   ))}
                   <Input
                     placeholder={`input%`}
-                    value={
-                      selectedSlippage &&
-                      !["0.1", "0.5", "1"].includes(selectedSlippage)
-                        ? selectedSlippage
-                        : ""
-                    }
-                    onChange={(e) => handleSlippageChange(e.target.value)}
+                    value={customSlippage}
+                    onChange={(e) => handleCustomSlippageChange(e.target.value)}
                     className="text-xs w-1/2 h-8 rounded-lg bg-zinc-950 border-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
                   />
                 </div>
@@ -412,7 +420,7 @@ export default function Swap() {
                 onClick={handleClick}
                 disabled={isSwapDisabled}
               >
-                {buttonText}{" "}
+                {buttonText}
               </Button>
               <DrawerClose className="w-full" asChild>
                 <Button variant={"outline"} className="bg-transparent">
