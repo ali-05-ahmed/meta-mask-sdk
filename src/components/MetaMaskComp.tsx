@@ -361,7 +361,7 @@ export default function MetaMaskComp() {
     //   </Button>
     // </div>
     <div className="App">
-      <h1 className="text-2xl font-bold text-center">LIFI Swap Demo</h1>
+      <h1 className="text-2xl font-bold text-center">SnapX Swap</h1>
 
       {connecting && <div>Loading...</div>}
 
@@ -388,36 +388,16 @@ export default function MetaMaskComp() {
               </>
             )}
           </Button>
-          <Button
-            className="w-full bg-transparent"
-            size={"lg"}
-            variant={"outline"}
-            onClick={terminate}
-          >
-            Disconnect
-          </Button>
         </div>
-      ) : (
-        <div>
-          <Button
-            className="w-full my-4"
-            size={"lg"}
-            variant={"secondary"}
-            onClick={connect}
-          >
-            <img src="/MetaMask.svg" className="w-4 h-4 mr-2" alt="MetaMask" />
-            Connect Wallet
-          </Button>
-          <Button
-            className="w-full bg-transparent"
-            size={"lg"}
-            variant={"outline"}
-            onClick={connectAndSign}
-          >
-            Connect w/ Sign
-          </Button>
-        </div>
-      )}
+      ) : null}
+      <Button
+        className="w-full bg-transparent"
+        size={"lg"}
+        variant={"outline"}
+        onClick={terminate}
+      >
+        Disconnect
+      </Button>
     </div>
   );
 }
