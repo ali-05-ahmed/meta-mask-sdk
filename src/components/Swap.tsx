@@ -251,8 +251,8 @@ export default function Swap() {
 
   return (
     <Drawer>
-      <DrawerTrigger>
-        <Button>Swap</Button>
+      <DrawerTrigger className="w-full">
+        <Button className="w-full btn-gradient text-white">Swap</Button>
       </DrawerTrigger>
       <DrawerContent className="bg-[#1a222c] border-none flex justify-center">
         <DrawerHeader>
