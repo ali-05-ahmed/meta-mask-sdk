@@ -52,7 +52,7 @@ export default function SwapInput({
   return (
     <div className="flex items-center gap-4 relative">
       <Label className="text-left absolute left-5 top-[12px] z-10 pointer-events-none text-xs font-thin">
-        You {isSeller ? "Sell" : "Buy"} Balance {100000000000}
+        You {isSeller ? "Sell" : "Buy"} Balance {100}
         {isSeller ? (
           <span
             className="text-green-500 font-normal cursor-pointer"
@@ -65,7 +65,7 @@ export default function SwapInput({
 
       <Input
         type="number"
-        placeholder="000,000,000.00"
+        placeholder="000.00"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         className="text-white bg-zinc-950 rounded-lg h-28 text-2xl border-none pl-5 focus-visible:border-green-500 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"

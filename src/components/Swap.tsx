@@ -43,9 +43,10 @@ import {
   getTransactionLinks,
 } from "@/lib/utils";
 import { Chains, Token } from "@/types/types";
-import { useAccount, useBalance , useConfig } from "wagmi";
-import { getBalance } from '@wagmi/core'
+import { useAccount, useBalance, useConfig } from "wagmi";
+import { getBalance } from "@wagmi/core";
 import { Console } from "console";
+import SwapExecutingModal from "./SwapExecutingModal";
 
 export default function Swap() {
   const [selectedSlippage, setSelectedSlippage] = useState<string>("0.1");
@@ -63,6 +64,9 @@ export default function Swap() {
   const [isSwapDisabled, setIsSwapDisabled] = useState(true);
   const [buttonText, setButtonText] = useState("Connect Wallet");
   const [customSlippage, setCustomSlippage] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [transactionLinks, setTransactionLinks] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
   const { address, isConnected } = useAccount();
   const config = useConfig();
   const _balance = useBalance();
@@ -73,6 +77,12 @@ export default function Swap() {
   const allFeeCosts =
     selectedRoute?.steps.flatMap((step: any) => step.estimate.feeCosts) || [];
   const totalAmountUSD = calculateTotalAmountUSD(allFeeCosts);
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTransactionLinks([]);
+    setErrorMessage("");
+  };
 
   const getChainId = (chain: Chains): ChainId => {
     switch (chain) {
@@ -87,31 +97,31 @@ export default function Swap() {
     }
   };
 
-  
-
   const handleClick = async () => {
     console.log(selectedRoute);
     try {
       console.log("execution started");
-      setIsSwapDisabled(true)
-      setButtonText("Executing...")
+      setIsSwapDisabled(true);
+      setButtonText("Executing...");
       let txs: string[] = [];
       const executedRoute = await executeRoute(selectedRoute, {
-      // Gets called once the route object gets new updates
-      updateRouteHook(selectedRoute:any) {
-        console.log(selectedRoute)
-        txs = getTransactionLinks(selectedRoute)
-      },
-    })
-      alert(txs);
-      setIsSwapDisabled(false)
-      setButtonText("Swap completed")
+        // Gets called once the route object gets new updates
+        updateRouteHook(selectedRoute: any) {
+          console.log(selectedRoute);
+          txs = getTransactionLinks(selectedRoute);
+        },
+      });
+      setIsModalOpen(true);
+      setTransactionLinks(txs);
+      setIsSwapDisabled(false);
+      setButtonText("Swap completed");
     } catch (error) {
-      setIsSwapDisabled(false)
-      setButtonText("Swap")
-      throw error;
+      setIsModalOpen(true);
+      setErrorMessage("Execution failed.");
+      setIsSwapDisabled(false);
+      setButtonText("Swap");
+     // throw error;
     }
-    
   };
 
   const handleSlippageChange = (value: string) => {
@@ -149,38 +159,38 @@ export default function Swap() {
 
   useEffect(() => {
     const swapInit = async () => {
-    if (!isConnected) {
-      setIsSwapDisabled(true);
-      setButtonText("Connect Wallet");
-    } else if (RouteIsNull) {
-      setIsSwapDisabled(true);
-      setButtonText("No Route Available");
-    } else if (isLoading) {
-      setIsSwapDisabled(true);
-      setButtonText("Loading...");
-    } 
-    // else if (isConnected && !RouteIsNull) {
-    //   // await getNativeToken(getChainId(sellerChain));
-    //   console.log("Route is null" , calculateGasCosts(selectedRoute, getChainId(sellerChain), getChainId(buyerChain)));
-    //   if (address){
-    //     const balance = await getBalance(config, {
-    //       address: address,
-    //       chainId: getChainId(sellerChain),
-    //     })
-    //   console.log("Balance" , balance);
+      if (!isConnected) {
+        setIsSwapDisabled(true);
+        setButtonText("Connect Wallet");
+      } else if (RouteIsNull) {
+        setIsSwapDisabled(true);
+        setButtonText("No Route Available");
+      } else if (isLoading) {
+        setIsSwapDisabled(true);
+        setButtonText("Loading...");
+      }
+      // else if (isConnected && !RouteIsNull) {
+      //   // await getNativeToken(getChainId(sellerChain));
+      //   console.log("Route is null" , calculateGasCosts(selectedRoute, getChainId(sellerChain), getChainId(buyerChain)));
+      //   if (address){
+      //     const balance = await getBalance(config, {
+      //       address: address,
+      //       chainId: getChainId(sellerChain),
+      //     })
+      //   console.log("Balance" , balance);
 
-    //   }
+      //   }
       // console.log("Route is null" , selectedRoute?.steps[0]?.estimate?.fee);
       // setIsSwapDisabled(true);
       // setButtonText("Loading...");
-  // }
-    else {
-      setIsSwapDisabled(false);
-      setButtonText("Swap");
-    }
-  }
-  swapInit();
-  }, [isConnected, RouteIsNull, isLoading, selectedRouteIndex,address]);
+      // }
+      else {
+        setIsSwapDisabled(false);
+        setButtonText("Swap");
+      }
+    };
+    swapInit();
+  }, [isConnected, RouteIsNull, isLoading, selectedRouteIndex, address]);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -272,7 +282,7 @@ export default function Swap() {
     sellerTokens,
     buyerTokens,
     selectedSlippage,
-    address
+    address,
   ]);
 
   useEffect(() => {
@@ -301,248 +311,264 @@ export default function Swap() {
   }, [routes, selectedRouteIndex, buyerToken, buyerTokens]);
 
   return (
-    <Drawer>
-      <DrawerTrigger className="w-full">
-        <Button className="w-full btn-gradient text-white">Swap</Button>
-      </DrawerTrigger>
-      <DrawerContent className="bg-[#1a222c] border-none flex justify-center">
-        <DrawerHeader>
-          <DrawerTitle className="text-center text-sm text-white flex justify-between items-center">
-            <span></span>
-            <span>Swap</span> <Settings />
-          </DrawerTitle>
-        </DrawerHeader>
-        <SwapSlider>
-          <DrawerFooter className="text-xs p-4">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <SwapInput
-                  type="seller"
-                  selectedChain={sellerChain}
-                  setSelectedChain={handleSellerChainChange}
-                  selectedToken={sellerToken}
-                  setSelectedToken={handleSellerTokenChange}
-                  tokens={sellerTokens}
-                  defaultValue={"ARB"}
-                  value={sellerValue}
-                  setValue={setSellerValue}
-                  fromAmtUSD={selectedRoute?.fromAmountUSD ?? ""}
-                  isLoading={isLoading}
-                  //balance={userBalance(address, fromChainID)}
-                />
-                <SwapInput
-                  type="buyer"
-                  defaultValue={"BAS"}
-                  selectedChain={buyerChain}
-                  setSelectedChain={handleBuyerChainChange}
-                  selectedToken={buyerToken}
-                  setSelectedToken={handleBuyerTokenChange}
-                  tokens={buyerTokens}
-                  value={buyerValue}
-                  setValue={(value) => setBuyerValue(value)}
-                  toAmtUSD={selectedRoute?.toAmountUSD ?? ""}
-                  isLoading={isLoading}
-                />
-              </div>
-              <div className="ml-2 flex items-center gap-2">
-                <Label className="text-sm">Slippage</Label>
-                <div className="flex gap-1">
-                  {["0.1", "0.5", "1"].map((slip) => (
-                    <Button
-                      key={slip}
-                      type="button"
-                      onClick={() => handleSlippageChange(slip)}
-                      className={`flex items-center w-1/6 text-white hover:bg-zinc-950 font-thin h-8 p-2 text-xs justify-center rounded-lg bg-zinc-950 cursor-pointer
+    <>
+      <Drawer>
+        <DrawerTrigger className="w-full">
+          <Button className="w-full btn-gradient text-white">Swap</Button>
+        </DrawerTrigger>
+        <DrawerContent className="bg-[#1a222c] border-none flex justify-center">
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-sm text-white flex justify-between items-center">
+              <span></span>
+              <span>Swap</span> <Settings />
+            </DrawerTitle>
+          </DrawerHeader>
+          <SwapSlider>
+            <DrawerFooter className="text-xs p-4">
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <SwapInput
+                    type="seller"
+                    selectedChain={sellerChain}
+                    setSelectedChain={handleSellerChainChange}
+                    selectedToken={sellerToken}
+                    setSelectedToken={handleSellerTokenChange}
+                    tokens={sellerTokens}
+                    defaultValue={"ARB"}
+                    value={sellerValue}
+                    setValue={setSellerValue}
+                    fromAmtUSD={selectedRoute?.fromAmountUSD ?? ""}
+                    isLoading={isLoading}
+                    //balance={userBalance(address, fromChainID)}
+                  />
+                  <SwapInput
+                    type="buyer"
+                    defaultValue={"BAS"}
+                    selectedChain={buyerChain}
+                    setSelectedChain={handleBuyerChainChange}
+                    selectedToken={buyerToken}
+                    setSelectedToken={handleBuyerTokenChange}
+                    tokens={buyerTokens}
+                    value={buyerValue}
+                    setValue={(value) => setBuyerValue(value)}
+                    toAmtUSD={selectedRoute?.toAmountUSD ?? ""}
+                    isLoading={isLoading}
+                  />
+                </div>
+                <div className="ml-2 flex items-center gap-2">
+                  <Label className="text-sm">Slippage</Label>
+                  <div className="flex gap-1">
+                    {["0.1", "0.5", "1"].map((slip) => (
+                      <Button
+                        key={slip}
+                        type="button"
+                        onClick={() => handleSlippageChange(slip)}
+                        className={`flex items-center w-1/6 text-white hover:bg-zinc-950 font-thin h-8 p-2 text-xs justify-center rounded-lg bg-zinc-950 cursor-pointer
                     ${
                       selectedSlippage === slip
                         ? "border border-green-500"
                         : "border border-transparent"
                     }`}
-                    >
-                      {slip}%
-                    </Button>
-                  ))}
-                  <Input
-                    placeholder={`input%`}
-                    value={customSlippage}
-                    onChange={(e) => handleCustomSlippageChange(e.target.value)}
-                    className="text-xs w-1/2 h-8 rounded-lg bg-zinc-950 border-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 justify-between ml-2">
-                <Label className="text-sm">DEX</Label>
-                <CarouselNext className="flex items-center font-light text-xs h-8 w-full justify-between rounded-lg text-white bg-zinc-950">
-                  <span className="flex items-center gap-1">
-                    <span className="flex items-center">
-                      {isLoading ? (
-                        <Skeleton className="w-5 h-5 bg-gray-400 rounded-full" />
-                      ) : (
-                        <>
-                          <img
-                            src={
-                              selectedRoute?.steps?.[0]?.toolDetails?.logoURI
-                            }
-                            alt={selectedRoute?.steps?.[0]?.toolDetails?.name}
-                            className="w-5 h-5 mr-1 rounded-full border bg-gray-400"
-                          />
-                          {getShortWords(
-                            selectedRoute?.steps?.[0]?.toolDetails?.name
-                          )}
-                        </>
-                      )}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-0.5">
-                    <p>
-                      {isLoading ? (
-                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
-                      ) : (
-                        <>
-                          1 {selectedRoute?.toToken?.symbol ?? ""} ={" "}
-                          {selectedRoute?.toAmountUSD ?? "000,000.00000000"}
-                        </>
-                      )}
-                    </p>
-                    {isLoading ? (
-                      <Skeleton className="w-[80px] h-2 bg-gray-400 rounded-lg" />
-                    ) : (
-                      <p className="text-green-500">
-                        {selectedRouteIndex === 0 ? "Best" : ""}
-                      </p>
-                    )}
-                    <ChevronRight />
-                  </span>
-                </CarouselNext>
-              </div>
-              <div className="text-xs pt-1 ml-2">
-                <dl className="space-y-0.5 text-xs">
-                  <div className="flex justify-between">
-                    <dt>Network Fee</dt>
-                    <dt>
-                      {isLoading ? (
-                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
-                      ) : (
-                        <>
-                          {selectedRoute?.gasCostUSD
-                            ? `$${parseFloat(
-                                routes[selectedRouteIndex].gasCostUSD
-                              ).toFixed(4)}`
-                            : ""}
-                          (〜$0.0005)
-                        </>
-                      )}
-                    </dt>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Protocol Fee</dt>
-                    <dt>
-                      {isLoading ? (
-                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
-                      ) : (
-                        <>
-                          {calculateTotalfeeCosts(selectedRoute)}(〜$
-                          {totalAmountUSD.toFixed(2)})
-                        </>
-                      )}
-                    </dt>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Minimum Received</dt>
-                    <dt>
-                      {isLoading ? (
-                        <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
-                      ) : (
-                        <>
-                          {selectedRoute?.toAmountUSD ?? "000.00"}{" "}
-                          {selectedRoute?.toToken?.symbol ?? ""}
-                        </>
-                      )}
-                    </dt>
-                  </div>
-                </dl>
-              </div>
-            </div>
-            <div className="w-full flex flex-col gap-1">
-              <Button
-                className="btn-gradient text-white"
-                onClick={handleClick}
-                disabled={isSwapDisabled}
-              >
-                {buttonText}
-              </Button>
-              <DrawerClose className="w-full" asChild>
-                <Button variant={"outline"} className="bg-transparent">
-                  Close
-                </Button>
-              </DrawerClose>
-            </div>
-          </DrawerFooter>
-          <DrawerFooter className="text-xs p-4">
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
-                {isLoading ? (
-                  Array(3)
-                    .fill(0)
-                    .map((_, index) => (
-                      <div
-                        key={index}
-                        className="h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between"
                       >
-                        <Skeleton className="w-1/2 h-4 bg-gray-400 rounded" />
-                        <div className="flex justify-between">
-                          <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
-                          <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
-                        </div>
-                      </div>
-                    ))
-                ) : Array.isArray(routes) && routes.length > 0 ? (
-                  routes.map((route: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs cursor-pointer ${
-                        idx === selectedRouteIndex
-                          ? "border border-green-500"
-                          : ""
-                      }`}
-                      onClick={() => setSelectedRouteIndex(idx)}
-                    >
-                      <p className="flex items-center justify-between">
-                        <span className="font-bold">
-                          {formatValue(route.toAmount, 18) ?? "000,000.0000000"}{" "}
-                          {route.toToken?.symbol}
-                        </span>
-                        {idx === 0 ? (
-                          <span className="text-green-500">Best</span>
+                        {slip}%
+                      </Button>
+                    ))}
+                    <Input
+                      placeholder={`input%`}
+                      value={customSlippage}
+                      onChange={(e) =>
+                        handleCustomSlippageChange(e.target.value)
+                      }
+                      className="text-xs w-1/2 h-8 rounded-lg bg-zinc-950 border-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 justify-between ml-2">
+                  <Label className="text-sm">DEX</Label>
+                  <CarouselNext className="flex items-center font-light text-xs h-8 w-full justify-between rounded-lg text-white bg-zinc-950">
+                    <span className="flex items-center gap-1">
+                      <span className="flex items-center">
+                        {isLoading ? (
+                          <Skeleton className="w-5 h-5 bg-gray-400 rounded-full" />
                         ) : (
-                          <span className="text-pink-700">-000.00%</span>
+                          <>
+                            <img
+                              src={
+                                selectedRoute?.steps?.[0]?.toolDetails?.logoURI
+                              }
+                              alt={selectedRoute?.steps?.[0]?.toolDetails?.name}
+                              className="w-5 h-5 mr-1 rounded-full border bg-gray-400"
+                            />
+                            {getShortWords(
+                              selectedRoute?.steps?.[0]?.toolDetails?.name
+                            )}
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <p>
+                        {isLoading ? (
+                          <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                        ) : (
+                          <>
+                            1 {selectedRoute?.toToken?.symbol ?? ""} ={" "}
+                            {selectedRoute?.toAmountUSD ?? "000,000.00000000"}
+                          </>
                         )}
                       </p>
-                      <p className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <img
-                            src={route?.steps?.[0]?.toolDetails?.logoURI}
-                            alt={route?.steps?.[0]?.toolDetails?.name}
-                            className="w-4 h-4 rounded-full border bg-gray-400"
-                          />
-                          {getShortWords(route?.steps?.[0]?.toolDetails?.name)}{" "}
-                          <LockOpen className="text-emerald-700 w-4 h-4" />
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <Fuel className="w-4 h-4" />
-                          $0.0000 ≈ 00.0000 after gas fees
-                        </span>
-                      </p>
+                      {isLoading ? (
+                        <Skeleton className="w-[80px] h-2 bg-gray-400 rounded-lg" />
+                      ) : (
+                        <p className="text-green-500">
+                          {selectedRouteIndex === 0 ? "Best" : ""}
+                        </p>
+                      )}
+                      <ChevronRight />
+                    </span>
+                  </CarouselNext>
+                </div>
+                <div className="text-xs pt-1 ml-2">
+                  <dl className="space-y-0.5 text-xs">
+                    <div className="flex justify-between">
+                      <dt>Network Fee</dt>
+                      <dt>
+                        {isLoading ? (
+                          <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                        ) : (
+                          <>
+                            {selectedRoute?.gasCostUSD
+                              ? `$${parseFloat(
+                                  routes[selectedRouteIndex].gasCostUSD
+                                ).toFixed(4)}`
+                              : ""}
+                            (〜$0.0005)
+                          </>
+                        )}
+                      </dt>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-center text-2xl font-bold">N/A</p>
-                )}
+                    <div className="flex justify-between">
+                      <dt>Protocol Fee</dt>
+                      <dt>
+                        {isLoading ? (
+                          <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                        ) : (
+                          <>
+                            {calculateTotalfeeCosts(selectedRoute)}(〜$
+                            {totalAmountUSD.toFixed(2)})
+                          </>
+                        )}
+                      </dt>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt>Minimum Received</dt>
+                      <dt>
+                        {isLoading ? (
+                          <Skeleton className="w-[100px] h-2 bg-gray-400 rounded-lg" />
+                        ) : (
+                          <>
+                            {selectedRoute?.toAmountUSD ?? "000.00"}{" "}
+                            {selectedRoute?.toToken?.symbol ?? ""}
+                          </>
+                        )}
+                      </dt>
+                    </div>
+                  </dl>
+                </div>
               </div>
-            </ScrollArea>
-          </DrawerFooter>
-        </SwapSlider>
-      </DrawerContent>
-    </Drawer>
+              <div className="w-full flex flex-col gap-1">
+                <Button
+                  className="btn-gradient text-white"
+                  onClick={handleClick}
+                  disabled={isSwapDisabled}
+                >
+                  {buttonText}
+                </Button>
+                <DrawerClose className="w-full" asChild>
+                  <Button variant={"outline"} className="bg-transparent">
+                    Close
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerFooter>
+            <DrawerFooter className="text-xs p-4">
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-2">
+                  {isLoading ? (
+                    Array(3)
+                      .fill(0)
+                      .map((_, index) => (
+                        <div
+                          key={index}
+                          className="h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between"
+                        >
+                          <Skeleton className="w-1/2 h-4 bg-gray-400 rounded" />
+                          <div className="flex justify-between">
+                            <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
+                            <Skeleton className="w-1/3 h-4 bg-gray-400 rounded" />
+                          </div>
+                        </div>
+                      ))
+                  ) : Array.isArray(routes) && routes.length > 0 ? (
+                    routes.map((route: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`h-20 w-full rounded-lg bg-zinc-950 p-4 flex flex-col justify-between text-xs cursor-pointer ${
+                          idx === selectedRouteIndex
+                            ? "border border-green-500"
+                            : ""
+                        }`}
+                        onClick={() => setSelectedRouteIndex(idx)}
+                      >
+                        <p className="flex items-center justify-between">
+                          <span className="font-bold">
+                            {formatValue(route.toAmount, 18) ??
+                              "000,000.0000000"}{" "}
+                            {route.toToken?.symbol}
+                          </span>
+                          {idx === 0 ? (
+                            <span className="text-green-500">Best</span>
+                          ) : (
+                            <span className="text-pink-700">-000.00%</span>
+                          )}
+                        </p>
+                        <p className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <img
+                              src={route?.steps?.[0]?.toolDetails?.logoURI}
+                              alt={route?.steps?.[0]?.toolDetails?.name}
+                              className="w-4 h-4 rounded-full border bg-gray-400"
+                            />
+                            {getShortWords(
+                              route?.steps?.[0]?.toolDetails?.name
+                            )}{" "}
+                            <LockOpen className="text-emerald-700 w-4 h-4" />
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <Fuel className="w-4 h-4" />
+                            $0.0000 ≈ 00.0000 after gas fees
+                          </span>
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-2xl font-bold">N/A</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </DrawerFooter>
+          </SwapSlider>
+        </DrawerContent>
+      </Drawer>
+
+      <SwapExecutingModal
+        isModalOpen={isModalOpen}
+        onClose={closeModal}
+        transactionLinks={
+          transactionLinks.length > 0 ? transactionLinks : undefined
+        }
+        errorMessage={errorMessage}
+      />
+    </>
   );
 }
