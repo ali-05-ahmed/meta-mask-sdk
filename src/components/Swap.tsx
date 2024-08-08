@@ -57,7 +57,7 @@ export default function Swap() {
   const [isSwapDisabled, setIsSwapDisabled] = useState(true);
   const [buttonText, setButtonText] = useState("Connect Wallet");
   const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance();
+  const _balance = useBalance();
   const RouteIsNull =
     routes?.[selectedRouteIndex] === undefined ||
     routes?.[selectedRouteIndex] === null;
@@ -117,7 +117,11 @@ export default function Swap() {
     } else if (isLoading) {
       setIsSwapDisabled(true);
       setButtonText("Loading...");
-    } else {
+    } else if (isConnected && !RouteIsNull) {
+      // console.log("Route is null" , selectedRoute?.steps[0]?.estimate?.fee);
+      // setIsSwapDisabled(true);
+      // setButtonText("Loading...");
+    }else {
       setIsSwapDisabled(false);
       setButtonText("Swap");
     }
