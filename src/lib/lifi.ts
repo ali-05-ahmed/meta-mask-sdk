@@ -37,6 +37,7 @@ export const requestRoutes = async ({
   toChainId,
   fromTokenAddress,
   toTokenAddress,
+  fromAddress,
   fromAmount,
   options,
 }: any) => {
@@ -60,6 +61,7 @@ export const requestRoutes = async ({
     toChainId,
     fromTokenAddress,
     toTokenAddress,
+    fromAddress,
     // fromAmount: ethers.parseUnits(
     //   fromAmount.toString(),
     //   getTokenDecimalsFromChain(fromChainId, fromTokenAddress).toString()

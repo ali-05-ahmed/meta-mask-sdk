@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { ethers } from "ethers";
 import { twMerge } from "tailwind-merge";
 import { getNativeToken } from "./lifi";
+import { RouteExtended } from "@lifi/sdk";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -100,4 +101,21 @@ export function formatValue(value: any, decimals: any) {
 
 export function getShortWords(input: string) {
   return input?.substring(0, 7);
+}
+
+export const getTransactionLinks = (route: RouteExtended) => {
+  let txs: string[] = [];
+  route.steps.forEach((step, index) => {
+    step.execution?.process.forEach((process) => {
+      if (process.txHash) {
+        console.log(
+          `Transaction Hash for Step ${index + 1}, Process ${process.type}:`,
+          process.txHash
+          
+        )
+        txs.push(process.txHash)
+      }
+    })
+  })
+  return txs;
 }

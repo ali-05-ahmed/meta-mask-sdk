@@ -28,7 +28,7 @@ import {
   requestRoutes,
   userBalance,
 } from "@/lib/lifi";
-import { ChainId } from "@lifi/sdk";
+import { ChainId, executeRoute } from "@lifi/sdk";
 import { Skeleton } from "./ui/skeleton";
 import SwapSlider from "./SwapSlider";
 import { CarouselNext } from "./ui/carousel";
@@ -40,6 +40,7 @@ import {
   calculateTotalGasCost,
   formatValue,
   getShortWords,
+  getTransactionLinks,
 } from "@/lib/utils";
 import { Chains, Token } from "@/types/types";
 import { useAccount, useBalance , useConfig } from "wagmi";
@@ -86,8 +87,31 @@ export default function Swap() {
     }
   };
 
-  const handleClick = () => {
+  
+
+  const handleClick = async () => {
     console.log(selectedRoute);
+    try {
+      console.log("execution started");
+      setIsSwapDisabled(true)
+      setButtonText("Executing...")
+      let txs: string[] = [];
+      const executedRoute = await executeRoute(selectedRoute, {
+      // Gets called once the route object gets new updates
+      updateRouteHook(selectedRoute:any) {
+        console.log(selectedRoute)
+        txs = getTransactionLinks(selectedRoute)
+      },
+    })
+      alert(txs);
+      setIsSwapDisabled(false)
+      setButtonText("Swap completed")
+    } catch (error) {
+      setIsSwapDisabled(false)
+      setButtonText("Swap")
+      throw error;
+    }
+    
   };
 
   const handleSlippageChange = (value: string) => {
@@ -134,24 +158,23 @@ export default function Swap() {
     } else if (isLoading) {
       setIsSwapDisabled(true);
       setButtonText("Loading...");
-    } else if (isConnected && !RouteIsNull) {
-      // await getNativeToken(getChainId(sellerChain));
-      console.log("Route is null" , calculateGasCosts(selectedRoute, getChainId(sellerChain), getChainId(buyerChain)));
-      if (address){
-        const balance = await getBalance(config, {
-          address: address,
-          chainId: getChainId(sellerChain),
-        })
-      console.log("Balance" , balance);
+    } 
+    // else if (isConnected && !RouteIsNull) {
+    //   // await getNativeToken(getChainId(sellerChain));
+    //   console.log("Route is null" , calculateGasCosts(selectedRoute, getChainId(sellerChain), getChainId(buyerChain)));
+    //   if (address){
+    //     const balance = await getBalance(config, {
+    //       address: address,
+    //       chainId: getChainId(sellerChain),
+    //     })
+    //   console.log("Balance" , balance);
 
-      }
-   
-
-      
+    //   }
       // console.log("Route is null" , selectedRoute?.steps[0]?.estimate?.fee);
       // setIsSwapDisabled(true);
       // setButtonText("Loading...");
-    }else {
+  // }
+    else {
       setIsSwapDisabled(false);
       setButtonText("Swap");
     }
@@ -215,6 +238,7 @@ export default function Swap() {
         toChainId: getChainId(buyerChain),
         fromTokenAddress: sellerTokenObj.address,
         toTokenAddress: buyerTokenObj.address,
+        fromAddress: address,
         fromAmount: (
           parseFloat(sellerValue) *
           10 ** sellerTokenObj.decimals
@@ -248,6 +272,7 @@ export default function Swap() {
     sellerTokens,
     buyerTokens,
     selectedSlippage,
+    address
   ]);
 
   useEffect(() => {
